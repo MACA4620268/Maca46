@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#123a63">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Avance de Obra</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--az:#123a63;--az2:#1d5a96;--fondo:#eef2f6;--card:#fff;--txt:#1b2733;--sub:#5b6b7b;--ok:#1e8e3e;--falta:#e8710a;--mal:#c5221f;--borde:#d5dde6;--hb:56px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--fondo);color:var(--txt);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,textarea{font:inherit}
+.bar{position:sticky;top:0;z-index:20;height:var(--hb);background:var(--az);color:#fff;display:flex;align-items:center;gap:8px;padding:0 10px;box-shadow:0 2px 6px #0003}
+.bar h1{font-size:16px;margin:0;flex:1;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar h1 small{display:block;font-weight:400;font-size:12px;opacity:.85}
+.bar .ib{background:none;border:0;color:#fff;font-size:24px;width:44px;height:44px;border-radius:8px}
+.bar .ib:active{background:#fff2}
+main{padding:12px 12px 90px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #0002}
+.obra{cursor:pointer;border-left:6px solid var(--az2)}
+.obra:active{background:#f6f9fc}
+.obra h2{margin:0 0 6px;font-size:20px;color:var(--az)}
+.obra .sub{color:var(--sub);font-size:13px;margin-bottom:8px}
+.kv{display:flex;justify-content:space-between;padding:3px 0;font-size:15px}
+.kv b{font-variant-numeric:tabular-nums}
+.barra{height:12px;background:#e3e8ee;border-radius:6px;overflow:hidden;margin:8px 0 4px}
+.barra i{display:block;height:100%;background:var(--az2)}
+.est{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.tag{font-weight:700;padding:2px 8px;border-radius:10px;font-size:13px}
+.tag.ok{background:#e6f4ea;color:var(--ok)} .tag.mal{background:#fce8e6;color:var(--mal)} .tag.falta{background:#fef0e1;color:var(--falta)} .tag.neu{background:#e8eef4;color:var(--sub)}
+.plazo{font-size:14px;color:var(--sub);margin:0 2px 10px}
+.total{background:var(--az);color:#fff}
+.total .kv{font-size:14px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 12px}
+.btn{border:0;border-radius:10px;padding:13px 10px;font-weight:700;background:var(--az2);color:#fff;min-height:48px}
+.btn:active{filter:brightness(.9)}
+.btn.sec{background:#fff;color:var(--az);border:2px solid var(--az2)}
+.btn.ok{background:var(--ok)} .btn.mal{background:var(--mal)} .btn.wa{background:#1f9d55}
+.btn[disabled]{opacity:.45}
+.full{grid-column:1/-1}
+.aviso{background:#fff4e5;border:1px solid #f6c26b;color:#7a4a00;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.chips{display:flex;gap:6px;margin-bottom:10px;position:sticky;top:var(--hb);z-index:5;background:var(--fondo);padding:8px 0}
+.chip{flex:1;border:2px solid var(--az2);background:#fff;color:var(--az);border-radius:20px;padding:7px 4px;font-weight:700;font-size:14px}
+.chip.on{background:var(--az2);color:#fff}
+.cap{font-weight:700;color:var(--az);font-size:14px;padding:10px 4px 6px;border-bottom:2px solid var(--az2);margin-top:6px;display:flex;justify-content:space-between}
+.cap span{font-weight:400;color:var(--sub)}
+.pt{display:flex;align-items:center;gap:10px;background:#fff;padding:11px 10px;border-bottom:1px solid var(--borde);cursor:pointer}
+.pt:active{background:#eef4fb}
+.pt .it{font-weight:700;font-size:14px;min-width:42px;color:var(--az)}
+.pt .ds{flex:1;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pt .ds small{color:var(--sub)}
+.pt .pc{font-weight:700;font-size:14px;min-width:58px;text-align:right}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.c-ok{color:var(--ok)} .c-falta{color:var(--falta)} .c-mal{color:var(--mal)}
+.bg-ok{background:var(--ok)} .bg-falta{background:var(--falta)}
+.nom{font-size:17px;font-weight:700;color:var(--az)}
+.nom .it{display:inline-block;background:var(--az);color:#fff;border-radius:6px;padding:1px 7px;margin-right:6px;font-size:14px}
+label.l{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px;font-weight:600}
+.fecha{display:flex;gap:8px;align-items:center}
+.fecha input{flex:1;min-width:0;width:100%;padding:12px;border:2px solid var(--borde);border-radius:10px;font-size:18px;font-weight:700;color:var(--az);background:#fff;min-height:50px}
+.fecha .hoy{border:0;background:#e8eef4;color:var(--az);border-radius:10px;padding:0 14px;font-weight:700;min-height:50px}
+.met{display:flex;align-items:center;gap:8px}
+.met input{flex:1;min-width:0;width:100%;padding:12px;border:2px solid var(--az2);border-radius:10px;font-size:24px;font-weight:700;text-align:right;min-height:56px}
+.met input.err{border-color:var(--mal);background:#fff5f5}
+.met .u{font-weight:700;color:var(--sub);min-width:40px}
+.obs{width:100%;padding:10px 12px;border:2px solid var(--borde);border-radius:10px;font-size:15px}
+.err-msg{background:#fce8e6;color:var(--mal);font-weight:700;border-radius:8px;padding:9px 11px;margin-top:8px;font-size:14px}
+.info{border:1px solid var(--borde);border-radius:10px;margin-top:14px;padding:4px 12px;background:#f9fbfd}
+.info .kv{border-bottom:1px dashed var(--borde);padding:7px 0}
+.info .kv:last-child{border:0}
+.prev{font-size:13px;color:var(--sub);margin-top:6px;text-align:right}
+.acc{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:14px}
+.hist{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.hist th{background:#e8eef4;color:var(--az);text-align:right;padding:7px 6px;font-size:12px}
+.hist th:first-child,.hist td:first-child,.hist th:last-child,.hist td:last-child{text-align:left}
+.hist td{padding:9px 6px;border-bottom:1px solid var(--borde);text-align:right;font-variant-numeric:tabular-nums}
+.hist tr.r{cursor:pointer} .hist tr.r:active{background:#eef4fb}
+.hist tfoot td{font-weight:700;border-top:2px solid var(--az2)}
+.vacio{color:var(--sub);text-align:center;padding:14px;font-size:14px}
+.shake{animation:sh .35s}
+@keyframes sh{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.res-wrap{background:#fff;border-radius:10px;box-shadow:0 1px 3px #0002}
+table.res{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px}
+@media (max-width:480px){table.res{font-size:11px}table.res td{padding:6px 2px!important}table.res th{padding:7px 1px!important;font-size:10px!important}}
+table.res th{position:sticky;top:var(--hb);z-index:4;background:var(--az2);color:#fff;padding:8px 4px;font-size:11px;line-height:1.15;text-align:center;border-right:1px solid #ffffff40}
+table.res td{padding:7px 4px;overflow-wrap:anywhere;border-bottom:1px solid var(--borde);vertical-align:top;font-variant-numeric:tabular-nums}
+table.res td.n{text-align:right;white-space:nowrap}
+table.res td.c{text-align:center}
+table.res tr.capr td{background:#e8eef4;font-weight:700;color:var(--az)}
+table.res tr.hl td{background:#fff3c4;font-weight:700}
+table.res tr.done td.s{color:var(--ok);font-weight:700}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1b2733;color:#fff;padding:12px 18px;border-radius:24px;font-weight:600;z-index:60;box-shadow:0 4px 14px #0005;max-width:92vw;text-align:center}
+.modal-bg{position:fixed;inset:0;background:#0007;z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:18px 16px 22px;max-height:90vh;overflow:auto}
+.modal h3{margin:0 0 8px;color:var(--az)}
+.pre{white-space:pre-wrap;background:#f4f7fa;border:1px solid var(--borde);border-radius:10px;padding:10px;font-size:13px;font-family:ui-monospace,Menlo,Consolas,monospace;max-height:45vh;overflow:auto}
+.lock{position:fixed;inset:0;z-index:100;background:var(--az);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:8px}
+.lk-ic{font-size:34px}.lk-t{font-size:20px;font-weight:700}.lk-s{opacity:.85;font-size:15px}
+.dots{display:flex;gap:16px;margin:10px 0}.dots i{width:16px;height:16px;border-radius:50%;border:2px solid #fff}.dots i.on{background:#fff}
+.lk-m{min-height:22px;color:#ffd7d4;font-weight:700;text-align:center}
+.kp{display:grid;grid-template-columns:repeat(3,74px);gap:14px}
+.kp button{height:74px;border-radius:50%;border:0;background:#ffffff22;color:#fff;font-size:28px;font-weight:600}.kp button:active{background:#ffffff55}
+.lk-l{background:none;border:0;color:#cfe3ff;text-decoration:underline;margin-top:6px;font-size:15px}
+.sec-t{font-weight:700;color:var(--az);font-size:16px;margin:0 0 8px}
+.ok-msg{background:#e6f4ea;color:var(--ok);font-weight:700;border-radius:8px;padding:9px 11px;font-size:14px;margin-bottom:8px}
+.foot{color:var(--sub);font-size:12px;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="jszip.min.js"></script>
+<script>
+"use strict";
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='2.0';
+const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+// ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
+let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
+function obraValida(x){if(!x||x.app!=='avobra-obra'||!Array.isArray(x.obras)||!x.obras.length)throw new Error('El archivo no es un archivo de obra de esta aplicación.');
+  if(!/^\d{4}-\d\d-\d\d$/.test(x.inicio||'')||!/^\d{4}-\d\d-\d\d$/.test(x.fin||'')||x.fin<x.inicio)throw new Error('El archivo de obra no tiene fechas de inicio y término válidas.');
+  x.obras.forEach(o=>{if(!o.k||!o.n||!Array.isArray(o.caps))throw new Error('Archivo de obra incompleto.');o.caps.forEach(c=>c.p.forEach(q=>{if(!q.i||!q.d||!q.u||!(q.m>0))throw new Error('Partida inválida en '+o.n+': '+(q.i||'?'));}));});return true;}
+function cargarObra(){try{const x=JSON.parse(localStorage.getItem(KOBRA));if(x){obraValida(x);return x;}}catch(e){}return null;}
+function aplicarObra(x0){OB=x0;DB={};OBRAS=[];P={};PRES=null;if(!x0)return;const x=JSON.parse(JSON.stringify(x0));INICIO=x.inicio;FIN=x.fin;PLAZO=diffD(INICIO,FIN)+1;TIT=x.titulo||'';TIT2=x.subtitulo||'';
+  PRES=x.pres?{nombre:x.pres.nombre,fecha:x.pres.fecha,cargado:x.cargado}:null;
+  x.obras.forEach(o=>{OBRAS.push({k:o.k,n:o.n});DB[o.k]={n:o.d||'',caps:o.caps};o.caps.forEach(c=>c.p.forEach(q=>{q.o=o.k;q.cap=c;q.mc=Math.round(q.m*100);if(!PRES){q.pu=null;q.s=0;}P[o.k+'|'+q.i]=q;}));});}
+let S=cargar();
+function cargar(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.regs))return s;}catch(e){}return{regs:[],lastBackup:null};}
+function guardar(){try{localStorage.setItem(KEY,JSON.stringify(S));return true;}catch(e){aviso('No se pudo guardar en el celular. Revise el espacio de almacenamiento.');return false;}}
+if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(()=>{});}
+// ---------- utilidades ----------
+const pad=n=>String(n).padStart(2,'0');
+const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
+const fF=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'';
+const diaSem=iso=>DIAS[new Date(iso+'T12:00:00').getDay()];
+const diffD=(a,b)=>Math.round((Date.parse(b+'T12:00:00')-Date.parse(a+'T12:00:00'))/864e5);
+const n2=(x,d=2)=>Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sol=x=>'S/ '+n2(x);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const und=u=>({M2:'m²',M3:'m³',ML:'ml'}[u]||u.toLowerCase());
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function regsDe(o,i){return S.regs.filter(r=>r.o===o&&r.i===i).sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:a.t-b.t);}
+function acumC(o,i,excl){let s=0;for(const r of S.regs)if(r.o===o&&r.i===i&&r.id!==excl)s+=r.qc;return s;}
+function estP(p){const ac=acumC(p.o,p.i);return{ac,sal:p.mc-ac,pct:p.mc?ac/p.mc*100:0,done:ac>=p.mc};}
+function resObra(k){let pres=0,av=0,sp=0,n=0;DB[k].caps.forEach(c=>c.p.forEach(p=>{const f=Math.min(1,acumC(k,p.i)/p.mc);sp+=f;n++;if(PRES){pres+=p.s;av+=p.s*f;}}));return PRES?{pres,av,sal:pres-av,pct:pres?av/pres*100:0}:{pct:n?sp/n*100:0};}
+function plazo(){const h=hoy();let dia=diffD(INICIO,h)+1;if(dia<0)dia=0;if(dia>PLAZO)dia=PLAZO;return{dia,pct:dia/PLAZO*100,faltan:PLAZO-dia};}
+function parseNum(s){s=String(s).trim().replace(',','.');if(!/^\d+(\.\d+)?$/.test(s))return{err:'Ingrese un número válido.'};const d=(s.split('.')[1]||'').length;if(d>2)return{err:'Use como máximo 2 decimales.'};const c=Math.round(parseFloat(s)*100);if(c<=0)return{err:'El metrado debe ser mayor que cero.'};return{c};}
+function validarFecha(f){if(!f)return'Seleccione una fecha.';if(f<INICIO||f>FIN)return'La fecha debe estar entre '+fF(INICIO)+' y '+fF(FIN)+'.';if(f>hoy())return'No se puede registrar una fecha futura.';return'';}
+function maxFecha(){const h=hoy();return h<FIN?h:FIN;}
+function fechaDefecto(){const h=hoy();return h<INICIO?INICIO:h>FIN?FIN:h;}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+function vibrar(){try{navigator.vibrate&&navigator.vibrate([90,60,90]);}catch(e){}}
+function modal(html){return new Promise(res=>{const bg=document.createElement('div');bg.className='modal-bg';bg.innerHTML='<div class="modal">'+html+'</div>';document.body.appendChild(bg);
+  const close=v=>{bg.remove();res(v);};bg.addEventListener('click',e=>{if(e.target===bg)close(null);const b=e.target.closest('[data-v]');if(b)close(b.dataset.v);});bg._close=close;});}
+function aviso(m){return modal('<h3>Aviso</h3><p>'+esc(m)+'</p><button class="btn full" style="width:100%" data-v="ok">Entendido</button>');}
+const $=s=>document.querySelector(s);
+// ---------- navegación ----------
+const app=$('#app');
+window.addEventListener('hashchange',render);
+function ir(h,reemplazar){if(reemplazar)location.replace(h);else location.hash=h;}
+function bar(t,sub,back){return '<div class="bar">'+(back?'<button class="ib" onclick="history.length>1?history.back():ir(\'#/\')" aria-label="Volver">←</button>':'')+'<h1>'+t+(sub?'<small>'+sub+'</small>':'')+'</h1>'+(back?'<button class="ib" onclick="ir(\'#/\')" aria-label="Inicio">⌂</button>':'')+'</div>';}
+function render(){if(bloqueado)return;document.querySelectorAll('.modal-bg').forEach(m=>m._close?m._close(null):m.remove());const h=location.hash.replace(/^#\/?/,'').split('/');window.scrollTo(0,0);
+  if(!OB)return vBienvenida();
+  if(h[0]==='obra'&&DB[h[1]])return vObra(h[1]);
+  if(h[0]==='reg'&&P[h[1]+'|'+h[2]])return vReg(P[h[1]+'|'+h[2]]);
+  if(h[0]==='res'&&DB[h[1]])return vRes(h[1],h[2]);
+  if(h[0]==='dia')return vDia();
+  if(h[0]==='respaldo')return vResp();
+  vInicio();}
+// ---------- Pantalla 1: inicio ----------
+let instalarEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instalarEvt=e;if(!location.hash||location.hash==='#/')render();});
+function vInicio(){const pl=plazo();let tp=0,ta=0,spct=0;
+  const cards=OBRAS.map(o=>{const r=resObra(o.k);if(PRES){tp+=r.pres;ta+=r.av;}spct+=r.pct;const atr=pl.dia>0&&r.pct+1e-9<pl.pct;
+    const tag=pl.dia===0?'<span class="tag neu">Por iniciar</span>':atr?'<span class="tag mal">⚠ Atraso</span>':'<span class="tag ok">✔ Al día</span>';
+    const np=DB[o.k].caps.reduce((s,c)=>s+c.p.length,0);
+    return '<div class="card obra" onclick="ir(\'#/obra/'+o.k+'\')"><h2>'+o.n+'</h2><div class="sub">'+esc(DB[o.k].n)+' · '+np+' partidas</div>'+
+      (PRES?'<div class="kv"><span>Presupuesto</span><b>'+sol(r.pres)+'</b></div><div class="kv"><span>Avance a la fecha</span><b>'+sol(r.av)+'</b></div><div class="kv"><span>Saldo</span><b>'+sol(r.sal)+'</b></div>':'')+
+      '<div class="barra"><i style="width:'+Math.min(100,r.pct).toFixed(1)+'%;'+(atr?'background:var(--mal)':'')+'"></i></div><div class="est"><b class="'+(atr?'c-mal':'')+'">'+n2(r.pct,1)+' % de avance'+(PRES?'':' (metrados)')+'</b>'+tag+'</div></div>';}).join('');
+  const tpct=PRES?(tp?ta/tp*100:0):spct/OBRAS.length;
+  let rec='';const dd=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
+  if(S.regs.length&&(dd===null||dd>=7))rec='<div class="aviso">💾 '+(dd===null?'Aún no ha hecho ninguna copia de respaldo.':'Último respaldo: hace '+dd+' días.')+' <b>Haga un respaldo hoy</b> desde Ajustes y respaldo.</div>';
+  const nopres=PRES?'':'<div class="aviso" style="background:#eef4fb;border-color:#9cc0e6;color:#123a63">🔒 Montos en soles ocultos. Para verlos, cargue el archivo de presupuesto en <b>Ajustes y respaldo</b>.</div>';
+  const total=PRES?'<div class="card total"><div class="kv"><span>TOTAL PRESUPUESTO</span><b>'+sol(tp)+'</b></div><div class="kv"><span>Avance a la fecha</span><b>'+sol(ta)+' ('+n2(tpct,1)+' %)</b></div><div class="kv"><span>Saldo</span><b>'+sol(tp-ta)+'</b></div><div style="font-size:12px;opacity:.8;margin-top:6px">Presupuesto vigente: '+esc(PRES.nombre)+' ('+fF(PRES.fecha)+') · cargado el '+fF(PRES.cargado)+'</div></div>'
+    :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,1)+' %</b></div></div>';
+  app.innerHTML=bar('AVANCE DE OBRA'+(TIT?' – '+esc(TIT):''),'Hoy: '+fF(hoy()),false)+'<main>'+
+   '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,1)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
+   '<div class="btns"><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
+   (instalarEvt?'<button class="btn ok full" onclick="instalar()">📲 Instalar aplicación</button>':'')+'</div>'+
+   '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
+function instalar(){if(!instalarEvt)return;instalarEvt.prompt();instalarEvt.userChoice.finally(()=>{instalarEvt=null;render();});}
+// ---------- Pantalla 2: partidas ----------
+let filtro='T';
+function vObra(k){const O=OBRAS.find(o=>o.k===k);
+  const chip=(v,t)=>'<button class="chip'+(filtro===v?' on':'')+'" onclick="filtro=\''+v+'\';vObra(\''+k+'\')">'+t+'</button>';
+  let html='';
+  DB[k].caps.forEach(c=>{const rows=c.p.map(p=>{const e=estP(p);if(filtro==='F'&&e.done||filtro==='C'&&!e.done)return'';
+      return '<div class="pt" onclick="ir(\'#/reg/'+k+'/'+p.i+'\')"><span class="dot '+(e.done?'bg-ok':'bg-falta')+'"></span><span class="it">'+p.i+'</span><span class="ds">'+esc(p.d)+' <small>('+p.u+')</small></span><span class="pc '+(e.done?'c-ok':'c-falta')+'">'+n2(e.pct,0)+' %</span></div>';}).join('');
+    if(rows)html+='<div class="cap">'+c.c+' '+esc(c.t)+'</div>'+rows;});
+  if(!html)html='<div class="vacio">No hay partidas en este filtro.</div>';
+  app.innerHTML=bar(O.n,esc(DB[k].n),true)+'<main><div class="chips">'+chip('T','Todas')+chip('F','Faltan')+chip('C','Completadas')+'</div><div class="card" style="padding:0;overflow:hidden">'+html+'</div></main>';}
+// ---------- Pantalla 3: registro ----------
+function vReg(p){const O=OBRAS.find(o=>o.k===p.o),e=estP(p),u=und(p.u);
+  const regs=regsDe(p.o,p.i);let ac=0;
+  const filas=regs.map(r=>{ac+=r.qc;return '<tr class="r" onclick="editarReg(\''+r.id+'\')"><td>'+fF(r.f)+'</td><td>'+n2(r.qc/100)+'</td><td>'+n2(ac/100)+'</td><td>'+(r.obs?esc(r.obs):'—')+'</td></tr>';}).join('');
+  app.innerHTML=bar(O.n+' · '+p.i,'Registro de avance',true)+'<main><div class="card">'+
+   '<div class="nom"><span class="it">'+p.i+'</span>'+esc(p.d)+'</div>'+
+   (e.done?'<div class="err-msg" style="background:#e6f4ea;color:var(--ok)">✔ Partida COMPLETADA. Ya no admite más avance.</div>':
+   '<label class="l">FECHA (toque para cambiarla)</label><div class="fecha"><input type="date" id="f" value="'+fechaDefecto()+'" min="'+INICIO+'" max="'+maxFecha()+'" onclick="try{this.showPicker()}catch(e){}"><button class="hoy" onclick="$(\'#f\').value=fechaDefecto();chk()">Hoy</button></div>'+
+   '<label class="l">METRADO AVANZADO</label><div class="met"><input id="q" inputmode="decimal" autocomplete="off" placeholder="0.00" oninput="chk()"><span class="u">'+u+'</span></div><div id="prev" class="prev"></div><div id="err"></div>'+
+   '<label class="l">OBSERVACIÓN (opcional)</label><input id="obs" class="obs" maxlength="80" placeholder="Ej.: muro eje A-B">')+
+   '<div class="info"><div class="kv"><span>Total metrado</span><b>'+n2(p.m)+' '+u+'</b></div><div class="kv"><span>Avance hasta la fecha</span><b>'+n2(e.ac/100)+' '+u+'</b></div><div class="kv"><span>Saldo metrado</span><b>'+n2(e.sal/100)+' '+u+'</b></div><div class="kv"><span>Avance</span><b>'+n2(e.pct,1)+' %</b></div><div class="kv"><span>Estado</span><span class="tag '+(e.done?'ok':'falta')+'">'+(e.done?'COMPLETADO':'FALTA')+'</span></div></div>'+
+   (e.done?'<div class="acc"><button class="btn sec full" style="grid-column:1/-1" onclick="history.back()">← Volver</button></div>':'<div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" id="ok" onclick="aceptar(\''+p.o+'\',\''+p.i+'\')">ACEPTAR</button></div>')+
+   '</div><div class="card"><b style="color:var(--az)">Registros anteriores</b>'+(regs.length?'<table class="hist"><thead><tr><th>FECHA</th><th>METRADO</th><th>ACUMUL.</th><th>OBS.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td>Total</td><td>'+n2(e.ac/100)+'</td><td></td><td>'+u+'</td></tr></tfoot></table><div class="prev" style="text-align:left">Toque un registro para corregirlo o borrarlo.</div>':'<div class="vacio">Sin registros aún.</div>')+'</div></main>';
+  window._p=p;}
+function chk(){const p=window._p,q=$('#q');if(!q)return null;const e=$('#err'),pv=$('#prev');e.innerHTML='';q.classList.remove('err');pv.textContent='';
+  if(!q.value.trim())return null;const r=parseNum(q.value);
+  if(r.err){q.classList.add('err');e.innerHTML='<div class="err-msg">'+r.err+'</div>';return null;}
+  const sal=p.mc-acumC(p.o,p.i);
+  if(r.c>sal){q.classList.add('err');e.innerHTML='<div class="err-msg">⛔ Excede el metrado. Saldo disponible: '+n2(sal/100)+' '+und(p.u)+'</div>';return null;}
+  const nac=acumC(p.o,p.i)+r.c;pv.textContent='Quedará: acumulado '+n2(nac/100)+' · saldo '+n2((p.mc-nac)/100)+' · '+n2(nac/p.mc*100,1)+' %';return r.c;}
+function rebote(msg){const e=$('#err');e.innerHTML='<div class="err-msg">'+msg+'</div>';const c=$('.card');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');vibrar();}
+function aceptar(o,i){const p=P[o+'|'+i],q=$('#q'),f=$('#f').value;
+  const ef=validarFecha(f);if(ef)return rebote('⛔ '+ef);
+  if(!q.value.trim())return rebote('⛔ Ingrese el metrado avanzado.');
+  const r=parseNum(q.value);if(r.err)return rebote('⛔ '+r.err);
+  const sal=p.mc-acumC(o,i);if(r.c>sal){q.classList.add('err');return rebote('⛔ Excede el metrado. Saldo disponible: '+n2(sal/100)+' '+und(p.u)+'. No se registró.');}
+  const reg={id:uid(),o,i,f,qc:r.c,obs:$('#obs').value.trim(),t:Date.now()};S.regs.push(reg);
+  if(!guardar()){S.regs.pop();return;}
+  $('#ok').disabled=true;toast('✔ Registrado '+n2(r.c/100)+' '+und(p.u)+' en '+i+' ('+fF(f)+')');ir('#/res/'+o+'/'+i,true);}
+async function editarReg(id){const r=S.regs.find(x=>x.id===id);if(!r)return;const p=P[r.o+'|'+r.i];
+  const v=await modal('<h3>Registro del '+fF(r.f)+'</h3><p style="margin:0 0 6px">'+p.i+' · '+esc(p.d)+'</p><label class="l">FECHA</label><div class="fecha"><input type="date" id="ef" value="'+r.f+'" min="'+INICIO+'" max="'+maxFecha()+'"></div><label class="l">METRADO</label><div class="met"><input id="eq" inputmode="decimal" value="'+n2(r.qc/100).replace(/,/g,'')+'"><span class="u">'+und(p.u)+'</span></div><label class="l">OBSERVACIÓN</label><input id="eo" class="obs" maxlength="80" value="'+esc(r.obs)+'"><div id="eerr"></div><div class="acc" style="grid-template-columns:1fr 1fr 1fr"><button class="btn mal" data-v="del">Borrar</button><button class="btn sec" data-v="no">Cancelar</button><button class="btn ok" id="eok">Guardar</button></div>'
+   .replace('id="eok"','id="eok" onclick="guardarEd(\''+id+'\')"'));
+  if(v==='del'){const c=await modal('<h3>¿Borrar este registro?</h3><p>'+fF(r.f)+' · '+n2(r.qc/100)+' '+und(p.u)+'</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">No</button><button class="btn mal" data-v="si">Sí, borrar</button></div>');
+    if(c==='si'){const bk=S.regs.slice();S.regs=S.regs.filter(x=>x.id!==id);if(!guardar())S.regs=bk;else toast('Registro borrado');render();}}}
+function guardarEd(id){const r=S.regs.find(x=>x.id===id),p=P[r.o+'|'+r.i],e=$('#eerr');
+  const f=$('#ef').value,ef=validarFecha(f);if(ef){e.innerHTML='<div class="err-msg">⛔ '+ef+'</div>';vibrar();return;}
+  const q=parseNum($('#eq').value);if(q.err){e.innerHTML='<div class="err-msg">⛔ '+q.err+'</div>';vibrar();return;}
+  const otros=acumC(r.o,r.i,id);if(otros+q.c>p.mc){e.innerHTML='<div class="err-msg">⛔ Excede el metrado. Máximo permitido para este registro: '+n2((p.mc-otros)/100)+' '+und(p.u)+'</div>';vibrar();return;}
+  const bk={...r};r.f=f;r.qc=q.c;r.obs=$('#eo').value.trim();if(!guardar()){Object.assign(r,bk);return;}
+  document.querySelector('.modal-bg')._close('ok');toast('✔ Registro corregido');render();}
+// ---------- Pantalla 4: hoja resumen ----------
+function vRes(k,item){const O=OBRAS.find(o=>o.k===k);let rows='';
+  DB[k].caps.forEach(c=>{rows+='<tr class="capr"><td colspan="6">'+c.c+' '+esc(c.t)+'</td></tr>';
+    c.p.forEach(p=>{const e=estP(p);rows+='<tr id="r'+p.i.replace('.','_')+'" class="'+(p.i===item?'hl ':'')+(e.done?'done':'')+'" onclick="ir(\'#/reg/'+k+'/'+p.i+'\')"><td>'+p.i+'</td><td>'+esc(p.d)+'</td><td class="c">'+p.u+'</td><td class="n">'+n2(p.m)+'</td><td class="n">'+n2(e.ac/100)+'</td><td class="n s">'+n2(e.sal/100)+'</td></tr>';});});
+  app.innerHTML=bar('RESUMEN · '+O.n,'Metrados registrados',true)+'<main style="padding-left:6px;padding-right:6px"><div class="res-wrap"><table class="res"><colgroup><col style="width:12%"><col><col style="width:9%"><col style="width:15%"><col style="width:15%"><col style="width:15%"></colgroup><thead><tr><th>ITEM</th><th>PARTIDA – DESCRIPCIÓN</th><th>UND</th><th>METRADO EXPED.</th><th>METRADO REGISTR.</th><th>SALDO METRADO</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+   '<div class="btns" style="margin-top:12px"><button class="btn sec" onclick="ir(\'#/obra/'+k+'\',true)">← Partidas</button><button class="btn" onclick="ir(\'#/\')">⌂ Inicio</button></div></main>';
+  if(item){const tr=document.getElementById('r'+item.replace('.','_'));if(tr)setTimeout(()=>{const y=tr.getBoundingClientRect().top+scrollY-innerHeight/3;scrollTo(0,Math.max(0,y));},60);}}
+// ---------- Exportar por día (texto WhatsApp) ----------
+function textoDia(f){const L=['*AVANCE DIARIO – '+diaSem(f)+' '+fF(f)+'*',TIT2,''];let hay=false;
+  OBRAS.forEach(o=>{L.push('*'+o.n+'*');const rs=S.regs.filter(r=>r.o===o.k&&r.f===f);
+    if(!rs.length){L.push('(sin avance registrado)');L.push('');return;}hay=true;
+    const items=[...new Set(rs.map(r=>r.i))].sort();let sd=0;
+    items.forEach(i=>{const p=P[o.k+'|'+i];const qd=rs.filter(r=>r.i===i).reduce((s,r)=>s+r.qc,0);
+      const ac=S.regs.filter(r=>r.o===o.k&&r.i===i&&r.f<=f).reduce((s,r)=>s+r.qc,0);const u=und(p.u);
+      L.push(i+' '+p.d);L.push('  Hoy: '+n2(qd/100)+' '+u+' | Acum: '+n2(ac/100)+' | Saldo: '+n2((p.mc-ac)/100)+' ('+n2(ac/p.mc*100,1)+'%)');
+      const obs=rs.filter(r=>r.i===i&&r.obs).map(r=>r.obs);if(obs.length)L.push('  Obs: '+obs.join('; '));if(PRES)sd+=p.s*qd/p.mc;});
+    if(PRES)L.push('_Avance valorizado del día: '+sol(sd)+'_');L.push('');});
+  L.push('Residente de Obra');return{txt:L.join('\n'),hay};}
+function vDia(){const f0=fechaDefecto();
+  app.innerHTML=bar('EXPORTAR POR DÍA','Texto para WhatsApp',true)+'<main><div class="card"><label class="l">FECHA DEL REPORTE (toque para cambiarla)</label><div class="fecha"><input type="date" id="df" value="'+f0+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="pvDia()" onclick="try{this.showPicker()}catch(e){}"><button class="hoy" onclick="$(\'#df\').value=fechaDefecto();pvDia()">Hoy</button></div>'+
+  '<label class="l">VISTA PREVIA</label><div class="pre" id="dtx"></div><div class="btns" style="margin-top:12px"><button class="btn wa full" onclick="enviarWA()">🟢 Enviar por WhatsApp</button><button class="btn sec" onclick="compartirTxt()">Compartir…</button><button class="btn sec" onclick="copiarTxt()">Copiar</button></div>'+
+  '<div class="prev" style="text-align:left">Al tocar “Enviar por WhatsApp” se abre WhatsApp para que elija el contacto. Si no hay señal, WhatsApp lo enviará cuando vuelva la conexión.</div></div></main>';pvDia();}
+function pvDia(){const f=$('#df').value;$('#dtx').textContent=f?textoDia(f).txt:'Seleccione una fecha.';}
+function enviarWA(){const f=$('#df').value;if(!f)return;const t=textoDia(f).txt;location.href='whatsapp://send?text='+encodeURIComponent(t);
+  setTimeout(()=>{if(document.visibilityState==='visible')compartirTxt();},1500);}
+function compartirTxt(){const t=textoDia($('#df').value).txt;if(navigator.share)navigator.share({text:t}).catch(()=>{});else copiarTxt();}
+function copiarTxt(){const t=textoDia($('#df').value).txt;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado. Péguelo en WhatsApp.'),()=>{aviso('No se pudo copiar automáticamente.');});}
+// ---------- Excel (xlsx con JSZip) ----------
+const xesc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function col(n){let s='';n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+// estilos: 0 normal,1 encabezado,2 num,3 texto borde,4 título,5 porcentaje,6 num negrita,7 texto negrita fondo,8 fecha texto centrado
+function hojaXml(sh){let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  x+='<sheetViews><sheetView workbookViewId="0"><pane ySplit="'+sh.frz+'" topLeftCell="A'+(sh.frz+1)+'" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+  x+='<cols>'+sh.w.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols><sheetData>';
+  sh.rows.forEach((r,ri)=>{x+='<row r="'+(ri+1)+'">';r.forEach((c,ci)=>{if(c==null)return;let v=c,s=0;if(typeof c==='object'){v=c.v;s=c.s||0;}const ref=col(ci)+(ri+1);
+      if(typeof v==='number'&&isFinite(v))x+='<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>';else x+='<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>';});x+='</row>';});
+  x+='</sheetData>'+(sh.merge?'<mergeCells count="'+sh.merge.length+'">'+sh.merge.map(m=>'<mergeCell ref="'+m+'"/>').join('')+'</mergeCells>':'')+'<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape"/></worksheet>';return x;}
+async function libroXlsx(hojas){const z=new JSZip();
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+hojas.map((h,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>');
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  z.file('xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+hojas.map((h,i)=>'<sheet name="'+xesc(h.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>');
+  z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+hojas.map((h,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(hojas.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/></numFmts>'+
+   '<fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font></fonts>'+
+   '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D5A96"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+   '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB0B8C0"/></left><right style="thin"><color rgb="FFB0B8C0"/></right><top style="thin"><color rgb="FFB0B8C0"/></top><bottom style="thin"><color rgb="FFB0B8C0"/></bottom><diagonal/></border></borders>'+
+   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9">'+
+   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+   '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'+
+   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'+
+   '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'+
+   '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'+
+   '<xf numFmtId="164" fontId="2" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>'+
+   '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'+
+   '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>'+
+   '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+  hojas.forEach((h,i)=>z.file('xl/worksheets/sheet'+(i+1)+'.xml',hojaXml(h)));
+  return z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
+function hojaObra(o){const M=!!PRES;const H=['ITEM','PARTIDA','UND','METRADO EXPEDIENTE','METRADO REGISTRADO','SALDO METRADO','% AVANCE'].concat(M?['P.U. (S/)','PRESUPUESTO (S/)','AVANCE (S/)','SALDO (S/)']:[]);const nc=H.length,LC=col(nc-1);
+  const rows=[[{v:'AVANCE DE OBRA – '+o.n+(TIT2?' – '+TIT2:''),s:4}],[DB[o.k].n],['Fecha de corte: '+fF(hoy())+(M?' · Presupuesto: '+PRES.nombre+' ('+fF(PRES.fecha)+')':'')],[],H.map(h=>({v:h,s:1}))];let tp=0,ta=0,sp=0,n=0;
+  const vac=()=>Array.from({length:nc-2},()=>({v:'',s:7}));
+  DB[o.k].caps.forEach(c=>{rows.push([{v:c.c,s:7},{v:c.t,s:7},...vac()]);
+    c.p.forEach(p=>{const e=estP(p),f=Math.min(1,e.ac/p.mc);sp+=f;n++;const r=[{v:p.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:p.m,s:2},{v:e.ac/100,s:2},{v:e.sal/100,s:2},{v:e.ac/p.mc,s:5}];
+      if(M){const av=Math.round(p.s*f*100)/100;tp+=p.s;ta+=av;r.push({v:p.pu,s:2},{v:p.s,s:2},{v:av,s:2},{v:Math.round((p.s-av)*100)/100,s:2});}rows.push(r);});});
+  const t=[{v:'',s:7},{v:'TOTAL '+o.n+(M?'':' (avance promedio por metrados)'),s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:M?(tp?ta/tp:0):(n?sp/n:0),s:5}];
+  if(M)t.push({v:'',s:7},{v:Math.round(tp*100)/100,s:6},{v:Math.round(ta*100)/100,s:6},{v:Math.round((tp-ta)*100)/100,s:6});rows.push(t);
+  return{name:o.n,frz:5,w:[9,60,6,12,12,12,10,11,14,13,13].slice(0,nc),rows,merge:['A1:'+LC+'1','A2:'+LC+'2']};}
+function hojaDetalle(){const M=!!PRES;const rows=[[{v:'DETALLE DIARIO DE METRADOS REGISTRADOS',s:4}],['Fecha de corte: '+fF(hoy())],[],['FECHA','OBRA','ITEM','PARTIDA','UND','METRADO'].concat(M?['AVANCE (S/)']:[],['OBSERVACIÓN']).map(h=>({v:h,s:1}))];
+  [...S.regs].sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:a.o<b.o?-1:a.o>b.o?1:a.i<b.i?-1:a.i>b.i?1:a.t-b.t).forEach(r=>{const p=P[r.o+'|'+r.i];
+    const row=[{v:fF(r.f),s:8},{v:(OBRAS.find(o=>o.k===r.o)||{n:r.o}).n,s:8},{v:r.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:r.qc/100,s:2}];if(M)row.push({v:Math.round(p.s*r.qc/p.mc*100)/100,s:2});row.push({v:r.obs||'',s:3});rows.push(row);});
+  if(S.regs.length===0)rows.push(['(sin registros)']);
+  return{name:'DETALLE DIARIO',frz:4,w:M?[11,11,7,55,6,11,12,30]:[11,11,7,55,6,11,30],rows};}
+async function exportarExcel(){try{const blob=await libroXlsx([...OBRAS.map(hojaObra),hojaDetalle()]);const nombre='Avance_Obra_'+hoy()+'.xlsx';
+  const v=await modal('<h3>Excel listo</h3><p>'+nombre+'<br><small>Hojas: '+OBRAS.map(o=>esc(o.n)).join(', ')+' y DETALLE DIARIO.</small></p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');
+  if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}catch(e){aviso('No se pudo generar el Excel: '+e.message);}}
+function descargar(blob,nombre){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);toast('Guardado en Descargas: '+nombre);}
+function compartirArchivo(blob,nombre){try{const f=new File([blob],nombre,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:nombre}).catch(()=>{});return;}}catch(e){}descargar(blob,nombre);}
+// ---------- Respaldo ----------
+function vBienvenida(){app.innerHTML=bar('AVANCE DE OBRA','Registro diario de metrados',false)+'<main><div class="card" style="text-align:center"><div style="font-size:44px">📋</div><h2 style="color:var(--az);margin:6px 0">Bienvenido</h2>'+
+  '<p>Para empezar, cargue el <b>archivo de la obra</b> (.json) que tiene guardado en su celular.</p><p class="prev" style="text-align:center">Los datos de la obra se guardan solo en este celular. No se envían a internet.</p>'+
+  '<div class="btns"><label class="btn full" style="text-align:center">📂 Cargar archivo de la obra<input type="file" accept=".json,application/json" style="display:none" onchange="cargarObraArchivo(this.files[0])"></label>'+
+  '<label class="btn sec full" style="text-align:center">♻️ Restaurar desde un respaldo<input type="file" accept=".json,application/json" style="display:none" onchange="restaurar(this.files[0])"></label></div></div>'+
+  '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
+function vResp(){if(!OB)return vBienvenida();const u=S.lastBackup?new Date(S.lastBackup):null;const pd=pinData();const np=Object.keys(P).length;
+  app.innerHTML=bar('AJUSTES Y RESPALDO','Obra · PIN · copia de seguridad',true)+'<main>'+
+  '<div class="card"><div class="sec-t">1. Archivo de la obra</div><div class="ok-msg">✔ '+esc(TIT2||TIT)+'<br><span style="font-weight:400">'+OBRAS.map(o=>esc(o.n)).join(' y ')+' · '+np+' partidas · plazo '+fF(INICIO)+' al '+fF(FIN)+'<br>'+(PRES?'Presupuesto: '+esc(PRES.nombre)+' ('+fF(PRES.fecha)+')<br>':'')+'En este celular desde el '+fF(OB.cargado)+'</span></div>'+
+  '<div class="btns"><label class="btn sec full" style="text-align:center">📂 Cargar archivo de obra actualizado<input type="file" accept=".json,application/json" style="display:none" onchange="cargarObraArchivo(this.files[0])"></label></div>'+
+  '<div class="prev" style="text-align:left">Si hay un adicional o una modificación de metrados o presupuesto, cargue el archivo actualizado. Sus registros se conservan.</div></div>'+
+  '<div class="card"><div class="sec-t">2. PIN de acceso</div>'+(pd?'<div class="ok-msg">✔ PIN activo. Se pide al abrir la aplicación y tras 3 minutos fuera de ella.</div><div class="btns"><button class="btn sec" onclick="cambiarPin()">Cambiar PIN</button><button class="btn sec" onclick="quitarPin()">Quitar PIN</button></div>':'<p style="margin-top:0">Sin PIN.</p><div class="btns"><button class="btn full" onclick="activarPin()">🔒 Activar PIN de 4 dígitos</button></div>')+'</div>'+
+  '<div class="card"><div class="sec-t">3. Respaldo</div><p style="margin-top:0">Registros guardados: <b>'+S.regs.length+'</b><br>Último respaldo: <b>'+(u?fF(u.getFullYear()+'-'+pad(u.getMonth()+1)+'-'+pad(u.getDate())):'nunca')+'</b></p>'+
+  '<div class="btns"><button class="btn full" onclick="hacerResp(\'dl\')">💾 Guardar respaldo en el celular</button><button class="btn sec full" onclick="hacerResp(\'sh\')">📤 Enviar respaldo (WhatsApp, correo, Drive)</button><label class="btn sec full" style="text-align:center">📂 Restaurar desde un respaldo<input type="file" accept=".json,application/json" style="display:none" onchange="restaurar(this.files[0])"></label></div>'+
+  '<div class="prev" style="text-align:left">Haga un respaldo cada semana y guárdelo fuera del celular. El respaldo incluye el archivo de la obra con su presupuesto: compártalo solo con personas de confianza.</div></div></main>';}
+function leerJson(file){return new Promise((ok,no)=>{const rd=new FileReader();rd.onload=()=>{try{ok(JSON.parse(rd.result));}catch(e){no(new Error('El archivo no es válido.'));}};rd.onerror=()=>no(new Error('No se pudo leer el archivo.'));rd.readAsText(file);});}
+function conflictos(x,regs){const ix={};x.obras.forEach(o=>o.caps.forEach(c=>c.p.forEach(q=>{ix[o.k+'|'+q.i]=Math.round(q.m*100);})));const falt=new Set(),exc=new Set(),ac={};
+  regs.forEach(r=>{const k=r.o+'|'+r.i;if(!(k in ix))falt.add(r.o+' '+r.i);else ac[k]=(ac[k]||0)+r.qc;});Object.keys(ac).forEach(k=>{if(ac[k]>ix[k])exc.add(k.replace('|',' '));});return{falt:[...falt],exc:[...exc]};}
+async function cargarObraArchivo(file){if(!file)return;try{const x=await leerJson(file);obraValida(x);const cf=conflictos(x,S.regs);
+    if(cf.falt.length)throw new Error('No se cargó: hay registros en partidas que no existen en el archivo nuevo ('+cf.falt.slice(0,5).join(', ')+'). Revise el archivo.');
+    if(OB||cf.exc.length){const c=await modal('<h3>'+(OB?'¿Reemplazar el archivo de la obra?':'Cargar archivo')+'</h3><p>'+esc(x.subtitulo||x.titulo||'')+'<br>Sus '+S.regs.length+' registros se conservan.</p>'+(cf.exc.length?'<div class="err-msg">⚠ En '+cf.exc.length+' partida(s) lo registrado supera el nuevo metrado: '+esc(cf.exc.slice(0,5).join(', '))+'. Deberá corregir esos registros.</div>':'')+'<div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn ok" data-v="si">Cargar</button></div>');if(c!=='si')return;}
+    x.cargado=hoy();localStorage.setItem(KOBRA,JSON.stringify(x));aplicarObra(x);toast('✔ Archivo de obra cargado');ir('#/',true);render();}catch(e){aviso(e.message);}}
+function hacerResp(modo){const d={app:'avobra',v:3,fecha:new Date().toISOString(),regs:S.regs,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
+  if(modo==='sh')compartirArchivo(blob,nombre);else descargar(blob,nombre);S.lastBackup=Date.now();guardar();setTimeout(render,300);}
+async function restaurar(file){if(!file)return;try{const d=await leerJson(file);if(d.app!=='avobra'||!Array.isArray(d.regs))throw new Error('El archivo no es un respaldo de esta aplicación.');
+    let ob=null;try{if(d.obra&&obraValida(d.obra))ob=d.obra;}catch(e){}const base=ob||OB;if(!base)throw new Error('Este respaldo no trae el archivo de la obra. Cargue primero el archivo de la obra.');
+    const ix={};base.obras.forEach(o=>o.caps.forEach(c=>c.p.forEach(q=>{ix[o.k+'|'+q.i]=1;})));
+    const ok=d.regs.filter(r=>r&&ix[r.o+'|'+r.i]&&/^\d{4}-\d\d-\d\d$/.test(r.f)&&Number.isInteger(r.qc)&&r.qc>0);
+    const c=await modal('<h3>¿Restaurar respaldo?</h3><p>El respaldo tiene <b>'+ok.length+'</b> registros (del '+fF((d.fecha||'').slice(0,10))+')'+(ob?' y el archivo de la obra':'')+'.<br>Se <b>reemplazarán</b> los '+S.regs.length+' registros actuales.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Restaurar</button></div>');
+    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(!guardar()){S.regs=bk;return;}
+    if(ob){try{localStorage.setItem(KOBRA,JSON.stringify(ob));}catch(e){}aplicarObra(ob);}toast('✔ Respaldo restaurado');ir('#/',true);render();}catch(e){aviso(e.message||'Archivo no válido.');}}
+// ---------- PIN ----------
+function pinData(){try{const x=JSON.parse(localStorage.getItem(KPIN));return x&&x.h?x:null;}catch(e){return null;}}
+async function hashPin(pin,salt){const t=salt+'|'+pin;try{if(crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}}catch(e){}let h=5381;for(const ch of t)h=((h<<5)+h+ch.charCodeAt(0))|0;return 'd'+h;}
+function pedirPin(o,cb){const d=document.createElement('div');d.className='lock';let v='',busy=false;
+  d.innerHTML='<div class="lk-ic">🔒</div><div class="lk-t">'+o.t+'</div><div class="lk-s">'+(o.s||'')+'</div><div class="dots">'+'<i></i>'.repeat(4)+'</div><div class="lk-m"></div><div class="kp">'+['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?'<button data-k="'+k+'">'+k+'</button>':'<span></span>').join('')+'</div>'+(o.olvido?'<button class="lk-l" data-k="olv">¿Olvidó su PIN?</button>':'')+(o.cancel?'<button class="lk-l" data-k="can">Cancelar</button>':'');
+  document.body.appendChild(d);const dots=d.querySelectorAll('.dots i'),m=d.querySelector('.lk-m'),pinta=()=>dots.forEach((x,i)=>x.classList.toggle('on',i<v.length));
+  const ui={err(t){m.textContent=t;const g=d.querySelector('.dots');g.classList.remove('shake');void g.offsetWidth;g.classList.add('shake');vibrar();},reset(){v='';pinta();},sub(t){d.querySelector('.lk-s').textContent=t;m.textContent='';},close(){d.remove();}};
+  d.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b||busy)return;const k=b.dataset.k;
+    if(k==='can'){d.remove();return;}if(k==='olv'){o.olvido(ui);return;}if(k==='⌫'){v=v.slice(0,-1);pinta();return;}if(v.length>=4)return;v+=k;pinta();
+    if(v.length===4){busy=true;const p=v;setTimeout(async()=>{let r=false;try{r=await cb(p,ui);}catch(e){}busy=false;if(r)d.remove();},150);}});return ui;}
+let bloqueado=false,ocultoDesde=0;
+function bloquear(){const pd=pinData();if(!pd||bloqueado)return false;bloqueado=true;document.querySelectorAll('.modal-bg').forEach(x=>x.remove());app.innerHTML='';let fallos=0,espera=0;
+  pedirPin({t:'Avance de Obra',s:'Ingrese su PIN',olvido:olvidoPin},async(pin,ui)=>{if(Date.now()<espera){ui.err('Espere '+Math.ceil((espera-Date.now())/1000)+' segundos');ui.reset();return false;}
+    if(await hashPin(pin,pd.salt)===pd.h){bloqueado=false;render();return true;}
+    fallos++;if(fallos>=5){espera=Date.now()+30000;fallos=0;ui.err('5 intentos fallidos. Espere 30 segundos.');}else ui.err('PIN incorrecto ('+fallos+' de 5)');ui.reset();return false;});return true;}
+async function olvidoPin(ui){window._cb='';const c=await modal('<h3>¿Olvidó su PIN?</h3><p>Por seguridad el PIN no se puede recuperar. Puede <b>borrar todos los datos de este celular</b> (archivo de obra, registros y PIN) y luego restaurarlos desde su último respaldo.</p><label class="l">Para confirmar escriba BORRAR</label><input class="obs" oninput="window._cb=this.value" autocomplete="off"><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar datos</button></div>');
+  if(c!=='si')return;if(String(window._cb).trim().toUpperCase()!=='BORRAR'){aviso('No se borró nada: debe escribir BORRAR.');return;}
+  try{[KEY,KOBRA,KPIN].forEach(k=>localStorage.removeItem(k));}catch(e){}S={regs:[],lastBackup:null};aplicarObra(null);bloqueado=false;ui.close();ir('#/respaldo',true);render();toast('Datos borrados. Restaure su respaldo.');}
+function nuevoPin(titulo,alFin){let primero=null;pedirPin({t:titulo,s:'Escriba un PIN de 4 dígitos',cancel:true},async(pin,ui)=>{
+    if(!primero){primero=pin;ui.reset();ui.sub('Repita el PIN para confirmar');return false;}
+    if(pin!==primero){primero=null;ui.reset();ui.sub('Escriba un PIN de 4 dígitos');ui.err('No coinciden. Intente de nuevo.');return false;}
+    const salt=uid();try{localStorage.setItem(KPIN,JSON.stringify({salt,h:await hashPin(pin,salt)}));}catch(e){ui.err('No se pudo guardar el PIN.');return false;}
+    toast(alFin);render();return true;});}
+function verificarPin(titulo,siOk){const pd=pinData();if(!pd)return siOk();pedirPin({t:titulo,s:'Ingrese su PIN actual',cancel:true},async(pin,ui)=>{if(await hashPin(pin,pd.salt)===pd.h){setTimeout(siOk,50);return true;}ui.err('PIN incorrecto');ui.reset();return false;});}
+function activarPin(){nuevoPin('Activar PIN','✔ PIN activado');}
+function cambiarPin(){verificarPin('Cambiar PIN',()=>nuevoPin('Nuevo PIN','✔ PIN cambiado'));}
+function quitarPin(){verificarPin('Quitar PIN',()=>{try{localStorage.removeItem(KPIN);}catch(e){}toast('PIN desactivado');render();});}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)ocultoDesde=Date.now();else if(ocultoDesde&&Date.now()-ocultoDesde>3*60000){ocultoDesde=0;bloquear();}else ocultoDesde=0;});
+// ---------- inicio ----------
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+aplicarObra(cargarObra());
+if(!bloquear())render();
+</script>
+</body>
+</html>
