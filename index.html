@@ -107,6 +107,21 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 .lk-l{background:none;border:0;color:#cfe3ff;text-decoration:underline;margin-top:6px;font-size:15px}
 .sec-t{font-weight:700;color:var(--az);font-size:16px;margin:0 0 8px}
 .ok-msg{background:#e6f4ea;color:var(--ok);font-weight:700;border-radius:8px;padding:9px 11px;font-size:14px;margin-bottom:8px}
+.ds2{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line;font-size:14px;color:#33414f;margin-top:6px}
+.txa{width:100%;min-height:220px;padding:10px 12px;border:2px solid var(--az2);border-radius:10px;font-size:15px;line-height:1.4;font-family:inherit}
+.sel{width:100%;padding:11px;border:2px solid var(--borde);border-radius:10px;font-size:16px;background:#fff;min-height:48px}
+.grid3{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:6px;align-items:center;font-size:13px}
+.grid3 b{text-align:center;color:var(--sub);font-size:12px}
+.grid3 input{width:100%;min-width:0;padding:9px 4px;border:2px solid var(--borde);border-radius:8px;font-size:17px;text-align:center}
+.sech{margin:18px 0 6px;padding:6px 10px;background:var(--az);color:#fff;border-radius:8px;font-weight:700;font-size:14px}
+.subh{font-weight:700;color:var(--az);margin:8px 0 4px;font-size:14px}
+.almf{border:1px dashed var(--borde);border-radius:10px;padding:8px;margin:6px 0}
+.almf .am{width:100%;padding:10px;border:2px solid var(--borde);border-radius:8px;font-size:16px}
+.almf .r2{display:grid;grid-template-columns:1fr 1.2fr 1.2fr 40px;gap:6px;margin-top:6px}
+.almf .r2 input{min-width:0;padding:9px 4px;border:2px solid var(--borde);border-radius:8px;font-size:15px;text-align:center}
+.xb{border:0;background:#fce8e6;color:#8a1c17;border-radius:8px;font-size:18px}
+.btn.mini{min-height:40px;padding:8px;font-size:15px;margin:4px 0}
+.avt{width:100%;border-collapse:collapse;font-size:13px}.avt th{background:#e8eef5;color:var(--az);padding:5px;text-align:center}.avt td{border-bottom:1px solid var(--borde);padding:5px}.avt td+td{text-align:right;white-space:nowrap}
 .foot{color:var(--sub);font-size:12px;text-align:center;margin-top:16px}
 </style>
 </head>
@@ -115,7 +130,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='2.0';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='2.2';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -168,6 +183,8 @@ function render(){if(bloqueado)return;document.querySelectorAll('.modal-bg').for
   if(h[0]==='res'&&DB[h[1]])return vRes(h[1],h[2]);
   if(h[0]==='dia')return vDia();
   if(h[0]==='respaldo')return vResp();
+  if(h[0]==='cuad')return vCuad();
+  if(h[0]==='as')return vAsiento(h[1],h[2],h[3]);
   vInicio();}
 // ---------- Pantalla 1: inicio ----------
 let instalarEvt=null;
@@ -187,7 +204,7 @@ function vInicio(){const pl=plazo();let tp=0,ta=0,spct=0;
     :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,1)+' %</b></div></div>';
   app.innerHTML=bar('AVANCE DE OBRA'+(TIT?' – '+esc(TIT):''),'Hoy: '+fF(hoy()),false)+'<main>'+
    '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,1)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
-   '<div class="btns"><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
+   '<div class="btns"><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
    (instalarEvt?'<button class="btn ok full" onclick="instalar()">📲 Instalar aplicación</button>':'')+'</div>'+
    '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
 function instalar(){if(!instalarEvt)return;instalarEvt.prompt();instalarEvt.userChoice.finally(()=>{instalarEvt=null;render();});}
@@ -314,8 +331,8 @@ function hojaDetalle(){const M=!!PRES;const rows=[[{v:'DETALLE DIARIO DE METRADO
     const row=[{v:fF(r.f),s:8},{v:(OBRAS.find(o=>o.k===r.o)||{n:r.o}).n,s:8},{v:r.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:r.qc/100,s:2}];if(M)row.push({v:Math.round(p.s*r.qc/p.mc*100)/100,s:2});row.push({v:r.obs||'',s:3});rows.push(row);});
   if(S.regs.length===0)rows.push(['(sin registros)']);
   return{name:'DETALLE DIARIO',frz:4,w:M?[11,11,7,55,6,11,12,30]:[11,11,7,55,6,11,30],rows};}
-async function exportarExcel(){try{const blob=await libroXlsx([...OBRAS.map(hojaObra),hojaDetalle()]);const nombre='Avance_Obra_'+hoy()+'.xlsx';
-  const v=await modal('<h3>Excel listo</h3><p>'+nombre+'<br><small>Hojas: '+OBRAS.map(o=>esc(o.n)).join(', ')+' y DETALLE DIARIO.</small></p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');
+async function exportarExcel(){try{const blob=await libroXlsx([...OBRAS.map(hojaObra),hojaDetalle()].concat(CU().as.length?[hojaCuaderno()]:[]));const nombre='Avance_Obra_'+hoy()+'.xlsx';
+  const v=await modal('<h3>Excel listo</h3><p>'+nombre+'<br><small>Hojas: '+OBRAS.map(o=>esc(o.n)).join(', ')+', DETALLE DIARIO'+(CU().as.length?' y CUADERNO DE OBRA':'')+'.</small></p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');
   if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}catch(e){aviso('No se pudo generar el Excel: '+e.message);}}
 function descargar(blob,nombre){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);toast('Guardado en Descargas: '+nombre);}
 function compartirArchivo(blob,nombre){try{const f=new File([blob],nombre,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:nombre}).catch(()=>{});return;}}catch(e){}descargar(blob,nombre);}
@@ -341,14 +358,14 @@ async function cargarObraArchivo(file){if(!file)return;try{const x=await leerJso
     if(cf.falt.length)throw new Error('No se cargó: hay registros en partidas que no existen en el archivo nuevo ('+cf.falt.slice(0,5).join(', ')+'). Revise el archivo.');
     if(OB||cf.exc.length){const c=await modal('<h3>'+(OB?'¿Reemplazar el archivo de la obra?':'Cargar archivo')+'</h3><p>'+esc(x.subtitulo||x.titulo||'')+'<br>Sus '+S.regs.length+' registros se conservan.</p>'+(cf.exc.length?'<div class="err-msg">⚠ En '+cf.exc.length+' partida(s) lo registrado supera el nuevo metrado: '+esc(cf.exc.slice(0,5).join(', '))+'. Deberá corregir esos registros.</div>':'')+'<div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn ok" data-v="si">Cargar</button></div>');if(c!=='si')return;}
     x.cargado=hoy();localStorage.setItem(KOBRA,JSON.stringify(x));aplicarObra(x);toast('✔ Archivo de obra cargado');ir('#/',true);render();}catch(e){aviso(e.message);}}
-function hacerResp(modo){const d={app:'avobra',v:3,fecha:new Date().toISOString(),regs:S.regs,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
+function hacerResp(modo){const d={app:'avobra',v:3,fecha:new Date().toISOString(),regs:S.regs,cuad:S.cuad||null,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
   if(modo==='sh')compartirArchivo(blob,nombre);else descargar(blob,nombre);S.lastBackup=Date.now();guardar();setTimeout(render,300);}
 async function restaurar(file){if(!file)return;try{const d=await leerJson(file);if(d.app!=='avobra'||!Array.isArray(d.regs))throw new Error('El archivo no es un respaldo de esta aplicación.');
     let ob=null;try{if(d.obra&&obraValida(d.obra))ob=d.obra;}catch(e){}const base=ob||OB;if(!base)throw new Error('Este respaldo no trae el archivo de la obra. Cargue primero el archivo de la obra.');
     const ix={};base.obras.forEach(o=>o.caps.forEach(c=>c.p.forEach(q=>{ix[o.k+'|'+q.i]=1;})));
     const ok=d.regs.filter(r=>r&&ix[r.o+'|'+r.i]&&/^\d{4}-\d\d-\d\d$/.test(r.f)&&Number.isInteger(r.qc)&&r.qc>0);
-    const c=await modal('<h3>¿Restaurar respaldo?</h3><p>El respaldo tiene <b>'+ok.length+'</b> registros (del '+fF((d.fecha||'').slice(0,10))+')'+(ob?' y el archivo de la obra':'')+'.<br>Se <b>reemplazarán</b> los '+S.regs.length+' registros actuales.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Restaurar</button></div>');
-    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(!guardar()){S.regs=bk;return;}
+    const c=await modal('<h3>¿Restaurar respaldo?</h3><p>El respaldo tiene <b>'+ok.length+'</b> registros (del '+fF((d.fecha||'').slice(0,10))+')'+(ob?' y el archivo de la obra':'')+'.<br>'+(d.cuad&&d.cuad.as&&d.cuad.as.length?'Incluye '+d.cuad.as.length+' asiento(s) del cuaderno. ':'')+'Se <b>reemplazarán</b> los '+S.regs.length+' registros actuales.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Restaurar</button></div>');
+    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(d.cuad&&Array.isArray(d.cuad.as))S.cuad={inicio:+d.cuad.inicio||0,as:d.cuad.as.filter(a=>a&&a.n>0&&/^\d{4}-\d\d-\d\d$/.test(a.f)&&typeof a.txt==='string')};if(!guardar()){S.regs=bk;return;}
     if(ob){try{localStorage.setItem(KOBRA,JSON.stringify(ob));}catch(e){}aplicarObra(ob);}toast('✔ Respaldo restaurado');ir('#/',true);render();}catch(e){aviso(e.message||'Archivo no válido.');}}
 // ---------- PIN ----------
 function pinData(){try{const x=JSON.parse(localStorage.getItem(KPIN));return x&&x.h?x:null;}catch(e){return null;}}
@@ -378,6 +395,188 @@ function activarPin(){nuevoPin('Activar PIN','✔ PIN activado');}
 function cambiarPin(){verificarPin('Cambiar PIN',()=>nuevoPin('Nuevo PIN','✔ PIN cambiado'));}
 function quitarPin(){verificarPin('Quitar PIN',()=>{try{localStorage.removeItem(KPIN);}catch(e){}toast('PIN desactivado');render();});}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)ocultoDesde=Date.now();else if(ocultoDesde&&Date.now()-ocultoDesde>3*60000){ocultoDesde=0;bloquear();}else ocultoDesde=0;});
+// ---------- Cuaderno de Obra (borrador de asientos; el oficial es el cuaderno fisico legalizado) ----------
+const TIPOS=[['diario','Asiento diario'],['consulta','Consulta'],['respuesta','Respuesta a consulta'],['ocurrencia','Ocurrencia'],['seguridad','Seguridad y salud'],['visita','Visita del Supervisor'],['mes','Cierre de mes'],['inicio','Inicio / apertura'],['termino','Término / cierre'],['otro','Otro']];
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','setiembre','octubre','noviembre','diciembre'];
+const tipoN=t=>t==='avance'?'Avance diario':t==='materiales'?'Recepción de materiales':(TIPOS.find(x=>x[0]===t)||['','Otro'])[1];
+const cap1=s=>{s=String(s||'').toLowerCase();return s.charAt(0).toUpperCase()+s.slice(1);};
+const lf=s=>/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]/.test(s)?s.charAt(0).toLowerCase()+s.slice(1):s;
+const lista=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' y '+a[a.length-1];
+const sinTilde=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+// --- abreviaturas (partidas, capitulos, insumos y unidades)
+const AB={provisional:'prov.',provisionales:'prov.',seguridad:'seg.',instalacion:'inst.',instalaciones:'inst.',sanitarias:'sanit.',sanitaria:'sanit.',sanitario:'sanit.',sanitarios:'sanit.',electricas:'eléct.',electrica:'eléct.',electrico:'eléct.',electricos:'eléct.',concreto:'C°',tarrajeo:'tarraj.',tarrajeados:'tarraj.',pintura:'pint.',carpinteria:'carp.',construccion:'constr.',replanteo:'replant.',remocion:'remoc.',demolicion:'demol.',eliminacion:'elim.',elementos:'elem.',existentes:'exist.',existente:'exist.',material:'mat.',materiales:'mat.',excedente:'exced.',excavacion:'excav.',encofrado:'encof.',desencofrado:'desencof.',trabajos:'trab.',preliminares:'prelim.',suministro:'sum.',colocacion:'coloc.',tuberia:'tub.',accesorios:'acces.',interiores:'int.',interior:'int.',exteriores:'ext.',exterior:'ext.',acondicionamiento:'acond.',mosquitero:'mosq.',metalica:'met.',metalico:'met.',ventilacion:'ventil.',ventanas:'vent.',ventana:'vent.',puertas:'ptas.',puerta:'pta.',incluye:'inc.',incl:'inc.',inc:'inc.',distribucion:'distrib.',general:'gral.',tablero:'tabl.',tomacorriente:'tomacorr.',interruptor:'interr.',thermomagnetico:'termomag.',luminaria:'lumin.',extractora:'extract.',extractor:'extract.',extrac:'extract.',extract:'extract.',inoxidable:'inox.',inox:'inox.',porcelanato:'porcel.',antideslizante:'antidesl.',contrazocalo:'contrazóc.',zocalo:'zóc.',contraplacada:'contrapl.',tabiqueria:'tabiq.',impermeabilizante:'imperm.',aditivos:'adit.',compactacion:'compact.',nivelacion:'nivel.',niveles:'niv.',aluminio:'alum.',transparente:'transp.',corredizo:'corred.',capacitacion:'capacit.',ambientales:'amb.',senalizacion:'señaliz.',temporal:'temp.',mobiliario:'mobil.',habilitacion:'habilit.',estructura:'estruct.',estructuras:'estruct.',galvanizada:'galv.',galvanizado:'galv.',mantenimiento:'mant.',mejoramiento:'mej.',registro:'reg.',emergencia:'emerg.',emergencias:'emerg.',respuesta:'resp.',terrestre:'terr.',equipamiento:'equipam.',arquitectura:'arquit.',implemento:'implem.',recordatoria:'record.',latex:'látex',
+ cemento:'cem.',ladrillo:'ladr.',ladrillos:'ladr.',corrugado:'corrug.',alambre:'alamb.',agregado:'agreg.',chancada:'chanc.',gruesa:'gr.',triplay:'tripl.',pegamento:'pegam.',fragua:'frag.',thinner:'thinner',
+ bolsa:'bls',bolsas:'bls',bl:'bls',bol:'bls',galon:'gl',galones:'gl',gln:'gl',kilogramo:'kg',kilogramos:'kg',kilo:'kg',kilos:'kg',unidad:'und',unidades:'und',un:'und',varilla:'var.',varillas:'var.',plancha:'pl.',planchas:'pl.',metro:'m',metros:'m',pieza:'pza',piezas:'pza',rollo:'rll',rollos:'rll',litro:'l',litros:'l',caja:'cja',cajas:'cja',balde:'bld',baldes:'bld',paquete:'paq.',paquetes:'paq.'};
+const STOP=new Set(['de','del','la','las','el','los','para']);
+const UPW=new Set(['pvc','cpvc','tw','awg','led','ip','epp','sctr','ntp','sap','gp','ii','ee']);
+function abrev(s,keep){let n=0;let r=String(s||'').trim().replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g,w=>{n++;const k=sinTilde(w);if(n>1&&STOP.has(k))return '';if(AB[k]!==undefined)return AB[k];if(UPW.has(k))return w.toUpperCase();return keep?w:w.toLowerCase();});
+  r=r.replace(/\.\./g,'.').replace(/\s+([,)]|\.(?!\d))/g,'$1').replace(/\(\s+/g,'(').replace(/\s{2,}/g,' ').trim();return r.charAt(0).toUpperCase()+r.slice(1);}
+function corto(k){const o=OBRAS.find(x=>x.k===k)||{n:k};const d=((DB[k]||{}).n||'').split(/\s[–-]\s/)[0].replace(/N[°º]\s*/,'').trim();const m=d.match(/^((?:[A-ZÁÉÍÓÚ]\.){2,})\s*(.+)$/);
+  if(!m)return{lar:cap1(o.n),col:cap1(o.n)};const pre=m[1],w=m[2].split(/\s+/),last=w[w.length-1],ini=w.slice(0,-1);
+  const lar=pre+' '+(ini.length?ini.map(x=>/^\d/.test(x)?x+' ':x.charAt(0).toUpperCase()+'.').join('').trim()+' ':'')+last;
+  const num=w.find(x=>/^\d/.test(x));return{lar,col:pre+' '+(num||w.map(x=>x.charAt(0).toUpperCase()+'.').join(''))};}
+const ambas=()=>OBRAS.length>1?'ambas II.EE.':corto(OBRAS[0].k).col;
+const colsTxt=()=>OBRAS.map(o=>corto(o.k).col).join(' | ');
+function CU(){if(!S.cuad)S.cuad={inicio:0,as:[]};if(!S.cuad.mats)S.cuad.mats=[];return S.cuad;}
+function asOrden(){return CU().as.slice().sort((a,b)=>a.n-b.n);}
+function sigN(){const a=CU().as;return a.length?Math.max(...a.map(x=>x.n))+1:(CU().inicio||1);}
+function obraN(k){return k==='AM'?OBRAS.map(o=>cap1(o.n)).join(' y '):cap1((OBRAS.find(o=>o.k===k)||{n:k}).n);}
+function horaAhora(){const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());}
+function pendientes(){const r=new Set(CU().as.filter(a=>a.tipo==='respuesta'&&a.ref).map(a=>+a.ref));return asOrden().filter(a=>a.tipo==='consulta'&&!r.has(a.n));}
+function diasSinAsiento(){const con=new Set(CU().as.map(a=>a.f));return [...new Set(S.regs.map(r=>r.f))].filter(f=>!con.has(f)).sort();}
+// --- avance y actividades automaticos
+function filasAvance(f){const m=new Map();OBRAS.forEach(o=>S.regs.filter(r=>r.o===o.k&&r.f===f).forEach(r=>{const p=P[o.k+'|'+r.i];if(!p)return;const key=r.i+'|'+p.d.trim().toUpperCase()+'|'+p.u;let x=m.get(key);
+  if(!x){x={i:r.i,d:abrev(p.d),u:und(p.u),q:{}};m.set(key,x);}x.q[o.k]=(x.q[o.k]||0)+r.qc;}));
+  return [...m.values()].sort((a,b)=>a.i.localeCompare(b.i,undefined,{numeric:true}));}
+function actAuto(f){const per=OBRAS.map(o=>{const is=[...new Set(S.regs.filter(r=>r.o===o.k&&r.f===f).map(r=>r.i))].filter(i=>P[o.k+'|'+i]).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));if(!is.length)return null;
+  const caps=[...new Set(is.map(i=>lf(abrev(P[o.k+'|'+i].cap.t))))];
+  const ps=is.map(i=>{const p=P[o.k+'|'+i];const ac=S.regs.filter(r=>r.o===o.k&&r.i===i&&r.f<=f).reduce((s,r)=>s+r.qc,0);return lf(abrev(p.d))+(ac>=p.mc?' (concluida)':'');});return{k:o.k,caps,ps};}).filter(Boolean);
+  if(!per.length)return 'Sin avance de partidas registrado en la fecha.';
+  const caps=[...new Set(per.flatMap(x=>x.caps))];
+  let t='Se continuó con '+caps.join('; ')+(per.length>1?', en ambas II.EE.':', en la '+corto(per[0].k).lar)+'.';
+  if(per.length>1)t+=' '+per.map((x,j)=>(j?'en la ':'En la ')+corto(x.k).lar+(j?', con ':' se avanzó con ')+lista(x.ps)).join('; ')+'.';else t+=' Se avanzó con '+lista(per[0].ps)+'.';
+  return t.replace(/\.{2,}/g,'.');}
+function txtAvance(f,obra){const L=[];OBRAS.forEach(o=>{if(obra&&obra!=='AM'&&obra!==o.k)return;const rs=S.regs.filter(r=>r.o===o.k&&r.f===f);if(!rs.length)return;
+  L.push(corto(o.k).lar+': '+[...new Set(rs.map(r=>r.i))].sort().map(i=>{const p=P[o.k+'|'+i];return i+' '+abrev(p.d)+' ('+und(p.u)+'): '+n2(rs.filter(r=>r.i===i).reduce((s,r)=>s+r.qc,0)/100);}).join('; ')+'.');});
+  return L.length?L.join('\n'):'Sin avance registrado en la aplicación para el '+fF(f)+'.';}
+// --- plantillas de asientos de texto libre
+function plantilla(t,f,a){const pl=plazo();const ob=a&&a.obra&&a.obra!=='AM'?corto(a.obra).lar:'____';switch(t){
+  case 'avance':return txtAvance(f,a&&a.obra);
+  case 'consulta':return 'Consulta: en la '+ob+', al ejecutar la partida ____ se encontró ____. Se consulta si ____.';
+  case 'respuesta':return 'Respecto al Asiento N° '+(a&&a.ref?pad(a.ref):'__')+': ____.';
+  case 'ocurrencia':return 'Desde las __:__ h se presentó ____ en la '+ob+'; se suspenden los trab. de ____ y el personal pasa a ____. No afecta la ruta crítica.';
+  case 'seguridad':return 'Charla de 5 minutos: ____. Personal con EPP completo y SCTR vigente. Sin incidentes.';
+  case 'visita':return 'Visita a '+(a&&a.obra!=='AM'?'la '+ob:ambas())+'. Se verifica el avance según cronograma y el uso de EPP. Recomiendo: ____.';
+  case 'mes':{const m=MESES[+f.slice(5,7)-1];return 'Cierre de '+m+' '+f.slice(0,4)+'. Avance físico acumulado: '+OBRAS.map(o=>corto(o.k).col+' '+n2(resObra(o.k).pct,1)+' %').join(', ')+'. Plazo transcurrido: '+n2(pl.pct,1)+' % (día '+pl.dia+' de '+PLAZO+'). Se elabora la Valorización de Avance N° __ (Formato N° 18) y el Informe Mensual del Residente N° __ (Formato N° 33).';}
+  case 'inicio':return 'Apertura del presente Cuaderno de Obra, legalizado ante ____, de la intervención '+(TIT2||TIT)+', en '+lista(OBRAS.map(o=>corto(o.k).lar))+'. Plazo: '+PLAZO+' días calendario, del '+fF(INICIO)+' al '+fF(FIN)+'. Residente: ____. Supervisor de Proyectos: ____.';
+  case 'termino':return 'Terminación de la intervención física el '+fF(f)+'. Se suscribieron el Acta de Terminación de la Intervención Física (Formato N° 39) y el Acta de Compromiso de Operación y Mantenimiento (Formato N° 38). Con este asiento se da por cerrado el presente Cuaderno de Obra, que consta de __ folios.';
+  default:return '';}}
+// --- texto del asiento
+const nq=v=>v?n2(v/100):'–';
+const nv=v=>v?String(+(+v).toFixed(2)):'–';
+function textoDiario(a,wa){const b=t=>wa?'*'+t+'*':t,c=' ('+colsTxt()+')',L=[],mo=a.mo||{},al=a.alm||{sal:[],ing:[]};
+  L.push(b('1. ACTIVIDADES'));L.push(a.act||'–');
+  L.push(b('2. AVANCE DEL DÍA')+c);if((a.av||[]).length)a.av.forEach(x=>L.push(x.i+' '+x.d+' ('+x.u+'): '+OBRAS.map(o=>nq(x.q[o.k])).join(' | ')));else L.push('Sin avance de partidas.');
+  L.push(b('3. MANO DE OBRA')+c);const ml=[];if(mo.mae)ml.push('Maestro de obra ('+ambas()+'): '+mo.mae);
+  [['op','Operarios'],['of','Oficiales'],['pe','Peones']].forEach(([k,n])=>{if(OBRAS.some(o=>(mo[o.k]||{})[k]))ml.push(n+': '+OBRAS.map(o=>nv((mo[o.k]||{})[k])).join(' | '));});
+  const tot=OBRAS.map(o=>{const p=mo[o.k]||{};return (p.op||0)+(p.of||0)+(p.pe||0);});if(tot.some(x=>x))ml.push('Total obreros: '+tot.map(nv).join(' | '));L.push(...(ml.length?ml:['Sin personal.']));
+  L.push(b('4. MOVIMIENTO DE ALMACÉN')+c);const fa=x=>x.m+(x.u?' ('+x.u+')':'')+': '+OBRAS.map(o=>nv(x.q[o.k])).join(' | ');
+  if(!al.sal.length&&!al.ing.length)L.push('Sin movimiento.');else{L.push('a) Salida a obra'+(al.sal.length?'':': sin movimiento.'));al.sal.forEach(x=>L.push(fa(x)));if(al.ing.length){L.push('b) Ingreso');al.ing.forEach(x=>L.push(fa(x)));}}
+  L.push(b('5. EQUIPO'));const eq=OBRAS.filter(o=>(a.eq||{})[o.k]).map(o=>corto(o.k).col+': '+a.eq[o.k]);L.push(...(eq.length?eq:['No se utilizó equipo.']));
+  L.push(b('6. HERRAMIENTAS'));L.push(a.herr||'–');
+  L.push(b('7. OCURRENCIAS'));const oc=a.oc||{};L.push(...(OBRAS.some(o=>oc[o.k])?OBRAS.map(o=>corto(o.k).col+': '+(oc[o.k]||'sin ocurrencias.')):['Sin ocurrencias.']));
+  return L.join('\n');}
+function textoAsiento(a,wa){const b=wa?'*':'';const L=[b+'ASIENTO N° '+pad(a.n)+' – DEL '+(a.autor==='S'?'SUPERVISOR DE PROYECTOS':'RESIDENTE')+' – '+fF(a.f)+b];
+  if(a.tipo==='diario'){L.push(textoDiario(a,wa));return L.join('\n');}
+  L.push(a.txt);const per=[];OBRAS.forEach(o=>{const p=a.pers&&a.pers[o.k];if(p&&(p.op||p.of||p.pe))per.push(corto(o.k).col+': '+[p.op?p.op+' operario(s)':'',p.of?p.of+' oficial(es)':'',p.pe?p.pe+' peón(es)':''].filter(Boolean).join(', '));});
+  if(per.length)L.push('Personal en obra – '+per.join('; ')+'.');if(a.clima)L.push('Clima: '+a.clima+'.');return L.join('\n');}
+function enviarTexto(t){location.href='whatsapp://send?text='+encodeURIComponent(t);setTimeout(()=>{if(document.visibilityState==='visible'&&navigator.share)navigator.share({text:t}).catch(()=>{});},1500);}
+// --- lista
+function vCuad(){const c=CU();
+  if(!c.inicio&&!c.as.length){app.innerHTML=bar('CUADERNO DE OBRA','Configuración inicial',true)+'<main><div class="card"><p style="margin-top:0">¿Cuál es el <b>número del próximo asiento</b> que escribirá en su cuaderno físico?</p><div class="met"><input id="ini" inputmode="numeric" placeholder="Ej.: 4"></div><div class="prev" style="text-align:left">Si recién va a abrir el cuaderno, escriba 1.</div><div id="err"></div><div class="btns" style="margin-top:12px"><button class="btn full" onclick="iniCuad()">Empezar</button></div></div></main>';return;}
+  const pend=pendientes(),sin=diasSinAsiento(),L=asOrden().reverse();let h='';
+  if(sin.length)h+='<div class="aviso">📅 Días con avance registrado y sin asiento: '+sin.map(f=>'<a href="#/as/nuevo/'+f+'/diario" style="font-weight:700;color:#7a4a00">'+fF(f)+'</a>').join(', ')+'</div>';
+  if(pend.length)h+='<div class="aviso" style="background:#fce8e6;border-color:#f3a59f;color:#8a1c17">❓ Consultas sin respuesta: '+pend.map(a=>'<a href="#/as/'+a.id+'" style="font-weight:700;color:#8a1c17">N° '+pad(a.n)+'</a>').join(', ')+'</div>';
+  h+='<div class="btns"><button class="btn ok" onclick="ir(\'#/as/nuevo/'+(sin.length?sin[sin.length-1]:hoy())+'/diario\')">⚡ Asiento del día</button><button class="btn" onclick="ir(\'#/as/nuevo/'+hoy()+'/consulta\')">＋ Otro asiento</button></div>';
+  h+=L.length?L.map(a=>'<div class="card obra" onclick="ir(\'#/as/'+a.id+'\')"><div class="est"><b>N° '+pad(a.n)+' · '+fF(a.f)+'</b>'+(a.pasado?'<span class="tag ok">✔ En cuaderno</span>':'<span class="tag falta">Por pasar</span>')+'</div><div class="sub" style="margin:4px 0 0">'+(a.autor==='S'?'Supervisor':'Residente')+' · '+tipoN(a.tipo)+'</div><div class="ds2">'+esc(a.tipo==='diario'?a.act:a.txt)+'</div></div>').join(''):'<div class="vacio">Aún no hay asientos. El primero será el N° '+pad(sigN())+'.</div>';
+  h+='<div class="btns"><button class="btn sec" onclick="exportarExcel()">📊 Exportar a Excel</button><button class="btn sec" onclick="cambiarIniCuad()">N° inicial: '+pad(c.inicio||1)+'</button></div>';
+  app.innerHTML=bar('CUADERNO DE OBRA',L.length+' asiento(s) · próximo N° '+pad(sigN()),true)+'<main>'+h+'</main>';}
+function iniCuad(){const v=parseInt(($('#ini').value||'').trim(),10);if(!(v>=1&&v<=9999)){$('#err').innerHTML='<div class="err-msg">Escriba un número de asiento válido.</div>';vibrar();return;}CU().inicio=v;if(guardar())render();}
+async function cambiarIniCuad(){if(CU().as.length)return aviso('El número inicial solo se puede cambiar cuando todavía no hay asientos. La numeración continúa desde el último asiento.');CU().inicio=0;guardar();render();}
+// --- formulario
+function filaAlm(x){x=x||{m:'',u:'',q:{}};return '<div class="almf"><input class="am" list="matsDL" placeholder="Insumo (ej.: Cemento Portland IP)" value="'+esc(x.m)+'" onchange="autoUnd(this)"><div class="r2"><input class="au" placeholder="und" value="'+esc(x.u)+'">'+
+  OBRAS.map(o=>'<input class="aq" data-k="'+o.k+'" inputmode="decimal" placeholder="'+esc(corto(o.k).col)+'" value="'+(x.q[o.k]?nv(x.q[o.k]):'')+'">').join('')+'<button type="button" class="xb" onclick="this.closest(\'.almf\').remove()">✕</button></div></div>';}
+function addAlm(id){$('#'+id).insertAdjacentHTML('beforeend',filaAlm());const r=$('#'+id).lastElementChild.querySelector('.am');r&&r.focus();}
+function autoUnd(inp){const m=CU().mats.find(x=>x.m.toLowerCase()===inp.value.trim().toLowerCase());const u=inp.closest('.almf').querySelector('.au');if(m&&!u.value)u.value=m.u;}
+function avHTML(f){const av=filasAvance(f);if(!av.length)return '<div class="prev" style="text-align:left">Sin metrados registrados para el '+fF(f)+'. Registre el avance en cada obra y aparecerá aquí.</div>';
+  return '<table class="avt"><tr><th>Partida</th>'+OBRAS.map(o=>'<th>'+esc(corto(o.k).col)+'</th>').join('')+'</tr>'+av.map(x=>'<tr><td>'+esc(x.i+' '+x.d+' ('+x.u+')')+'</td>'+OBRAS.map(o=>'<td>'+nq(x.q[o.k])+'</td>').join('')+'</tr>').join('')+'</table>';}
+function vAsiento(id,f0,t0){const c=CU();let a=c.as.find(x=>x.id===id);const nuevo=!a;
+  if(nuevo){if(!c.inicio&&!c.as.length){ir('#/cuad',true);return;}
+    const t=TIPOS.some(x=>x[0]===t0)?t0:'diario',f=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:hoy();
+    const prev=asOrden().reverse().find(x=>x.tipo==='diario');
+    a={id:'',n:sigN(),f,h:horaAhora(),autor:(t==='visita'||t==='respuesta')?'S':'R',tipo:t,obra:'AM',txt:'',pers:{},clima:'',ref:'',pasado:false,
+      act:actAuto(f),mo:prev?JSON.parse(JSON.stringify(prev.mo||{})):{mae:1},alm:{sal:[],ing:[]},eq:prev?Object.assign({},prev.eq):{},herr:prev&&prev.herr?prev.herr:('Herr. manuales en '+ambas()+'.').replace(/\.{2,}/g,'.'),oc:{}};
+    if(t!=='diario')a.txt=plantilla(t,f,a);}
+  window._as=a;window._asNuevo=nuevo;window._okBlancos=false;
+  if(a.pasado){app.innerHTML=bar('ASIENTO N° '+pad(a.n),'Ya pasado al cuaderno físico',true)+'<main><div class="card"><div class="pre" style="max-height:none;font-family:inherit;font-size:15px">'+esc(textoAsiento(a))+'</div>'+
+    '<div class="btns" style="margin-top:12px"><button class="btn wa" onclick="enviarTexto(textoAsiento(window._as,true))">🟢 WhatsApp</button><button class="btn sec" onclick="copiarAs()">Copiar</button><button class="btn sec full" onclick="desbloquearAs()">🔓 Desbloquear para corregir</button></div></div></main>';return;}
+  const op=(arr,v)=>arr.map(x=>'<option value="'+esc(x[0])+'"'+(x[0]===v?' selected':'')+'>'+esc(x[1])+'</option>').join('');
+  const tipos=TIPOS.some(x=>x[0]===a.tipo)?TIPOS:TIPOS.concat([[a.tipo,tipoN(a.tipo)]]);
+  const cons=asOrden().filter(x=>x.tipo==='consulta'),dia=a.tipo==='diario',mo=a.mo||{},al=a.alm||{sal:[],ing:[]};
+  const per=OBRAS.map(o=>{const p=mo[o.k]||{};return '<span>'+esc(corto(o.k).col)+'</span><input id="po_'+o.k+'" inputmode="numeric" value="'+(p.op||'')+'"><input id="pf_'+o.k+'" inputmode="numeric" value="'+(p.of||'')+'"><input id="pp_'+o.k+'" inputmode="numeric" value="'+(p.pe||'')+'">';}).join('');
+  const H=t=>'<div class="sech">'+t+'</div>';
+  app.innerHTML=bar((nuevo?'NUEVO ':'')+'ASIENTO N° '+pad(a.n),nuevo?'Borrador para el cuaderno físico':'Por pasar al cuaderno físico',true)+'<main><div class="card">'+
+   '<datalist id="matsDL">'+CU().mats.map(x=>'<option value="'+esc(x.m)+'">').join('')+'</datalist>'+
+   '<div class="fecha"><input type="date" id="aF" value="'+a.f+'" onchange="cambioFecha()" max="'+hoy()+'" onclick="try{this.showPicker()}catch(e){}"></div>'+
+   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="l">QUIÉN ESCRIBE</label><select id="aAut" class="sel">'+op([['R','Residente'],['S','Supervisor']],a.autor)+'</select></div>'+
+   '<div><label class="l">TIPO</label><select id="aTipo" class="sel" onchange="cambioTipo()">'+op(tipos,a.tipo)+'</select></div></div>'+
+   // asiento diario
+   '<div id="boxDia" style="display:'+(dia?'block':'none')+'">'+
+    H('1. ACTIVIDADES')+'<textarea id="aAct" class="txa" style="min-height:130px">'+esc(a.act||'')+'</textarea><div class="btns" style="margin:6px 0 0"><button class="btn sec full" onclick="regenAct()">↻ Volver a generar desde el avance</button></div>'+
+    H('2. AVANCE DEL DÍA')+'<div id="avBox">'+avHTML(a.f)+'</div>'+
+    H('3. MANO DE OBRA')+'<div class="grid3" style="grid-template-columns:2.3fr 1fr;margin-bottom:8px"><span>Maestro de obra ('+ambas()+')</span><input id="mae" inputmode="numeric" value="'+(mo.mae||'')+'"></div>'+
+     '<div class="grid3"><span></span><b>Operarios</b><b>Oficiales</b><b>Peones</b>'+per+'</div>'+
+    H('4. MOVIMIENTO DE ALMACÉN')+'<div class="subh">a) Salida a obra</div><div id="salBox">'+al.sal.map(filaAlm).join('')+'</div><button class="btn sec full mini" onclick="addAlm(\'salBox\')">＋ Agregar salida</button>'+
+     '<div class="subh">b) Ingreso</div><div id="ingBox">'+al.ing.map(filaAlm).join('')+'</div><button class="btn sec full mini" onclick="addAlm(\'ingBox\')">＋ Agregar ingreso</button>'+
+    H('5. EQUIPO')+OBRAS.map(o=>'<label class="l">'+esc(corto(o.k).col)+'</label><input id="eq_'+o.k+'" class="sel" placeholder="Ej.: mezcladora, pulidora" value="'+esc((a.eq||{})[o.k]||'')+'">').join('')+
+    H('6. HERRAMIENTAS')+'<input id="aHerr" class="sel" value="'+esc(a.herr||'')+'">'+
+    H('7. OCURRENCIAS')+OBRAS.map(o=>'<label class="l">'+esc(corto(o.k).col)+'</label><textarea id="oc_'+o.k+'" class="txa" style="min-height:60px" placeholder="Vacío = sin ocurrencias">'+esc((a.oc||{})[o.k]||'')+'</textarea>').join('')+
+   '</div>'+
+   // asiento de texto libre
+   '<div id="boxLib" style="display:'+(dia?'none':'block')+'">'+
+    '<div id="refBox" style="display:'+(a.tipo==='respuesta'?'block':'none')+'"><label class="l">RESPONDE A LA CONSULTA</label><select id="aRef" class="sel" onchange="cambioRef()"><option value="">— elegir —</option>'+cons.map(x=>'<option value="'+x.n+'"'+(String(x.n)===String(a.ref)?' selected':'')+'>N° '+pad(x.n)+' · '+fF(x.f)+'</option>').join('')+'</select></div>'+
+    '<label class="l">OBRA</label><select id="aObra" class="sel">'+op([['AM','Ambas']].concat(OBRAS.map(o=>[o.k,corto(o.k).lar])),a.obra)+'</select>'+
+    '<label class="l">TEXTO DEL ASIENTO</label><textarea id="aTxt" class="txa">'+esc(a.txt||'')+'</textarea>'+
+    '<div class="btns" style="margin:8px 0 0"><button class="btn sec full" onclick="usarPlantilla()">📋 Plantilla</button></div>'+
+   '</div>'+
+   '<div id="err"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarAs()">GUARDAR</button></div>'+
+   '<div class="btns" style="margin-top:10px"><button class="btn wa" onclick="enviarTexto(textoAsiento(leerAs(),true))">🟢 WhatsApp</button><button class="btn sec" onclick="copiarAs()">Copiar</button>'+
+   (nuevo?'':'<button class="btn full" onclick="pasarAs()">✍️ Ya lo pasé al cuaderno físico</button>'+(a.n===Math.max(...CU().as.map(x=>x.n))?'<button class="btn mal full" onclick="borrarAs()">Borrar este asiento</button>':''))+'</div>'+
+   '</div><div class="prev" style="text-align:left">La aplicación es un borrador ordenado: el asiento oficial es el que se escribe y firma en el cuaderno físico legalizado.</div></main>';}
+function numIn(id){const el=$('#'+id);if(!el)return 0;const v=parseInt((el.value||'').trim(),10);return v>0?v:0;}
+function leerAlm(id){return [...document.querySelectorAll('#'+id+' .almf')].map(r=>{const m=abrev(r.querySelector('.am').value,true),u=abrev(r.querySelector('.au').value,true).toLowerCase(),q={};
+  r.querySelectorAll('.aq').forEach(i=>{const v=parseFloat(String(i.value).trim().replace(',','.'));if(v>0)q[i.dataset.k]=Math.round(v*100)/100;});return{m,u,q};}).filter(x=>x.m&&Object.keys(x.q).length);}
+function leerAs(){const a=Object.assign({},window._as);a.f=$('#aF').value;a.autor=$('#aAut').value;a.tipo=$('#aTipo').value;
+  if(a.tipo==='diario'){a.act=$('#aAct').value.trim();a.av=filasAvance(a.f);a.mo={mae:numIn('mae')};OBRAS.forEach(o=>{const p={op:numIn('po_'+o.k),of:numIn('pf_'+o.k),pe:numIn('pp_'+o.k)};if(p.op||p.of||p.pe)a.mo[o.k]=p;});
+    a.alm={sal:leerAlm('salBox'),ing:leerAlm('ingBox')};a.eq={};a.oc={};OBRAS.forEach(o=>{const e=$('#eq_'+o.k).value.trim(),c=$('#oc_'+o.k).value.trim();if(e)a.eq[o.k]=e;if(c)a.oc[o.k]=c;});
+    a.herr=$('#aHerr').value.trim();a.obra='AM';a.ref='';a.txt=textoDiario(a);a.pers={};a.clima='';}
+  else{a.obra=$('#aObra').value;a.ref=a.tipo==='respuesta'?($('#aRef').value||''):'';a.txt=$('#aTxt').value.trim();}
+  return a;}
+function regenAct(){$('#aAct').value=actAuto($('#aF').value);}
+function cambioFecha(){const f=$('#aF').value,prev=window._as;if(!/^\d{4}-\d\d-\d\d$/.test(f))return;
+  const act=$('#aAct').value.trim();if(!act||act===actAuto(prev.f).trim())$('#aAct').value=actAuto(f);$('#avBox').innerHTML=avHTML(f);
+  const cur=$('#aTxt').value.trim();if(prev.tipo!=='diario'&&(!cur||cur===plantilla(prev.tipo,prev.f,prev).trim())){const a=leerAs();$('#aTxt').value=plantilla(a.tipo,f,a);}
+  window._as=Object.assign(window._as,{f});}
+function cambioTipo(){const t=$('#aTipo').value,prev=window._as;$('#boxDia').style.display=t==='diario'?'block':'none';$('#boxLib').style.display=t==='diario'?'none':'block';$('#refBox').style.display=t==='respuesta'?'block':'none';
+  if(t==='visita'||t==='respuesta')$('#aAut').value='S';
+  if(t!=='diario'){const cur=$('#aTxt').value.trim();if(!cur||cur===plantilla(prev.tipo,prev.f,prev).trim()){const a=leerAs();$('#aTxt').value=plantilla(t,a.f,a);}}
+  window._as=Object.assign(window._as,{tipo:t});}
+function cambioRef(){const a=leerAs();const t=$('#aTxt').value;if(/^Respecto al Asiento N° (\d+|__):/.test(t))$('#aTxt').value=t.replace(/^Respecto al Asiento N° (\d+|__):/,'Respecto al Asiento N° '+(a.ref?pad(a.ref):'__')+':');}
+async function usarPlantilla(){const a=leerAs();if(a.txt){const c=await modal('<h3>¿Reemplazar el texto?</h3><p>Se pondrá la plantilla de "'+esc(tipoN(a.tipo))+'" en lugar del texto actual.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn" data-v="si">Reemplazar</button></div>');if(c!=='si')return;}$('#aTxt').value=plantilla(a.tipo,a.f,a);}
+function guardarAs(){const a=leerAs(),e=$('#err');e.innerHTML='';const er=m=>{e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
+  if(!/^\d{4}-\d\d-\d\d$/.test(a.f))return er('Elija la fecha del asiento.');
+  if(a.f>hoy())return er('No se puede registrar un asiento con fecha futura.');
+  if(a.tipo==='diario'){if(!a.act)return er('Escriba las actividades del día.');
+    const malas=[...document.querySelectorAll('.almf')].filter(r=>r.querySelector('.am').value.trim()&&![...r.querySelectorAll('.aq')].some(i=>parseFloat(String(i.value).replace(',','.'))>0));
+    if(malas.length)return er('Hay insumos de almacén sin cantidad. Escriba la cantidad o quite la fila con ✕.');}
+  else{if(!a.txt)return er('Escriba el texto del asiento.');
+    if(/____|__:__/.test(a.txt)&&!window._okBlancos){window._okBlancos=true;e.innerHTML='<div class="err-msg" style="background:#fff4e5;color:#7a4a00">⚠ El texto tiene espacios por completar ( ____ ). Complételos, o toque GUARDAR otra vez para guardarlo así.</div>';return;}}
+  window._okBlancos=false;const c=CU();const bk=JSON.stringify(c);
+  if(a.tipo==='diario')[...a.alm.sal,...a.alm.ing].forEach(x=>{const i=c.mats.findIndex(y=>y.m.toLowerCase()===x.m.toLowerCase());if(i>=0)c.mats.splice(i,1);c.mats.unshift({m:x.m,u:x.u});});c.mats=c.mats.slice(0,200);
+  if(window._asNuevo){a.id=uid();a.n=sigN();a.t=Date.now();c.as.push(a);}else{const i=c.as.findIndex(x=>x.id===a.id);c.as[i]=a;}
+  const ant=c.as.filter(x=>x.n<a.n).sort((x,y)=>y.n-x.n)[0];
+  if(!guardar()){S.cuad=JSON.parse(bk);return;}
+  toast('✔ Asiento N° '+pad(a.n)+' guardado'+(ant&&ant.f>a.f?' (ojo: fecha anterior al N° '+pad(ant.n)+')':''));ir('#/cuad',true);}
+async function pasarAs(){const a=leerAs();const c=await modal('<h3>¿Ya lo escribió en el cuaderno físico?</h3><p>El asiento N° '+pad(a.n)+' quedará <b>bloqueado</b>, igual que en el papel.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Todavía no</button><button class="btn ok" data-v="si">Sí, ya lo pasé</button></div>');
+  if(c!=='si')return;a.pasado=true;const cu=CU();const i=cu.as.findIndex(x=>x.id===a.id);const bk=cu.as[i];cu.as[i]=a;if(!guardar()){cu.as[i]=bk;return;}toast('✔ Asiento N° '+pad(a.n)+' marcado como pasado');ir('#/cuad',true);}
+async function desbloquearAs(){const a=window._as;const c=await modal('<h3>¿Desbloquear el asiento N° '+pad(a.n)+'?</h3><p>Hágalo solo para corregir un error de transcripción. En el cuaderno físico no se borra: se anula con una línea y se escribe "Corrijo: …".</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Desbloquear</button></div>');
+  if(c!=='si')return;a.pasado=false;guardar();render();}
+async function borrarAs(){const a=window._as;const c=await modal('<h3>¿Borrar el asiento N° '+pad(a.n)+'?</h3><p>Solo se puede borrar el último asiento, para no dejar saltos en la numeración.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar</button></div>');
+  if(c!=='si')return;const cu=CU();const bk=cu.as.slice();cu.as=cu.as.filter(x=>x.id!==a.id);if(!guardar()){cu.as=bk;return;}toast('Asiento borrado');ir('#/cuad',true);}
+function copiarAs(){const a=$('#aF')?leerAs():window._as;const t=textoAsiento(a);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto copiado'),()=>aviso('No se pudo copiar automáticamente.'));}
+function hojaCuaderno(){const rows=[[{v:'CUADERNO DE OBRA – BORRADOR DE ASIENTOS'+(TIT2?' – '+TIT2:''),s:4}],['Fecha de corte: '+fF(hoy())],[],['N°','FECHA','AUTOR','TIPO','CONTENIDO DEL ASIENTO','EN CUADERNO'].map(h=>({v:h,s:1}))];
+  asOrden().forEach(a=>rows.push([{v:a.n,s:8},{v:fF(a.f),s:8},{v:a.autor==='S'?'Supervisor':'Residente',s:8},{v:tipoN(a.tipo),s:3},{v:textoAsiento(a).split('\n').slice(1).join('\n'),s:3},{v:a.pasado?'Sí':'No',s:8}]));
+  return{name:'CUADERNO DE OBRA',frz:4,w:[6,11,11,16,110,10],rows};}
 // ---------- inicio ----------
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 aplicarObra(cargarObra());
