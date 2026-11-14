@@ -130,7 +130,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.0';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.1';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -189,6 +189,7 @@ function render(){if(bloqueado)return;document.querySelectorAll('.modal-bg').for
   if(h[0]==='agentes')return vAgentes();
   if(h[0]==='config')return vConfig();
   if(h[0]==='import')return vImport();
+  if(h[0]==='rep')return vRep(h[1]);
   vInicio();}
 // ---------- Pantalla 1: inicio ----------
 let instalarEvt=null;
@@ -199,29 +200,29 @@ function vInicio(){const pl=plazo();let tp=0,ta=0,spct=0;
     const np=DB[o.k].caps.reduce((s,c)=>s+c.p.length,0);
     return '<div class="card obra" onclick="ir(\'#/obra/'+o.k+'\')"><h2>'+o.n+'</h2><div class="sub">'+esc(DB[o.k].n)+' · '+np+' partidas</div>'+
       (PRES?'<div class="kv"><span>Presupuesto</span><b>'+sol(r.pres)+'</b></div><div class="kv"><span>Avance a la fecha</span><b>'+sol(r.av)+'</b></div><div class="kv"><span>Saldo</span><b>'+sol(r.sal)+'</b></div>':'')+
-      '<div class="barra"><i style="width:'+Math.min(100,r.pct).toFixed(1)+'%;'+(atr?'background:var(--mal)':'')+'"></i></div><div class="est"><b class="'+(atr?'c-mal':'')+'">'+n2(r.pct,1)+' % de avance'+(PRES?'':' (metrados)')+'</b>'+tag+'</div></div>';}).join('');
+      '<div class="barra"><i style="width:'+Math.min(100,r.pct).toFixed(1)+'%;'+(atr?'background:var(--mal)':'')+'"></i></div><div class="est"><b class="'+(atr?'c-mal':'')+'">'+n2(r.pct,2)+' % de avance'+(PRES?'':' (metrados)')+'</b>'+tag+'</div></div>';}).join('');
   const tpct=PRES?(tp?ta/tp*100:0):spct/OBRAS.length;
   let rec='';const dd=S.lastBackup?Math.floor((Date.now()-S.lastBackup)/864e5):null;
   if(S.regs.length&&(dd===null||dd>=7))rec='<div class="aviso">💾 '+(dd===null?'Aún no ha hecho ninguna copia de respaldo.':'Último respaldo: hace '+dd+' días.')+' <b>Haga un respaldo hoy</b> desde Ajustes y respaldo.</div>';
   const nopres=PRES?'':'<div class="aviso" style="background:#eef4fb;border-color:#9cc0e6;color:#123a63">🔒 Montos en soles ocultos. Para verlos, cargue el archivo de presupuesto en <b>Ajustes y respaldo</b>.</div>';
-  const total=PRES?'<div class="card total"><div class="kv"><span>TOTAL PRESUPUESTO</span><b>'+sol(tp)+'</b></div><div class="kv"><span>Avance a la fecha</span><b>'+sol(ta)+' ('+n2(tpct,1)+' %)</b></div><div class="kv"><span>Saldo</span><b>'+sol(tp-ta)+'</b></div><div style="font-size:12px;opacity:.8;margin-top:6px">Presupuesto vigente: '+esc(PRES.nombre)+' ('+fF(PRES.fecha)+') · cargado el '+fF(PRES.cargado)+'</div></div>'
-    :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,1)+' %</b></div></div>';
+  const total=PRES?'<div class="card total"><div class="kv"><span>TOTAL PRESUPUESTO</span><b>'+sol(tp)+'</b></div><div class="kv"><span>Avance a la fecha</span><b>'+sol(ta)+' ('+n2(tpct,2)+' %)</b></div><div class="kv"><span>Saldo</span><b>'+sol(tp-ta)+'</b></div><div style="font-size:12px;opacity:.8;margin-top:6px">Presupuesto vigente: '+esc(PRES.nombre)+' ('+fF(PRES.fecha)+') · cargado el '+fF(PRES.cargado)+'</div></div>'
+    :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,2)+' %</b></div></div>';
   app.innerHTML=bar('AVANCE DE OBRA'+(TIT?' – '+esc(TIT):''),'Hoy: '+fF(hoy()),false)+'<main>'+
-   '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,1)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
-   '<div class="btns"><button class="btn full ok" onclick="ir(\'#/parte/\'+fechaDefecto())">📋 Parte Diario</button><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn" onclick="ir(\'#/agentes\')">👷 Agentes</button><button class="btn" onclick="ir(\'#/import\')">🗂️ Datos</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
+   '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,2)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
+   '<div class="btns"><button class="btn full ok" onclick="ir(\'#/parte/\'+fechaDefecto())">📋 Parte Diario</button><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="ir(\'#/rep\')">📊 Reportes / Exportar</button><button class="btn" onclick="ir(\'#/agentes\')">👷 Agentes</button><button class="btn" onclick="ir(\'#/import\')">🗂️ Datos</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
    (instalarEvt?'<button class="btn ok full" onclick="instalar()">📲 Instalar aplicación</button>':'')+'</div>'+
    '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
 function instalar(){if(!instalarEvt)return;instalarEvt.prompt();instalarEvt.userChoice.finally(()=>{instalarEvt=null;render();});}
 // ---------- Pantalla 2: partidas ----------
-let filtro='T';
+let filtro='T',filtroMin=0;
 function vObra(k){const O=OBRAS.find(o=>o.k===k);
   const chip=(v,t)=>'<button class="chip'+(filtro===v?' on':'')+'" onclick="filtro=\''+v+'\';vObra(\''+k+'\')">'+t+'</button>';
   let html='';
-  DB[k].caps.forEach(c=>{const rows=c.p.map(p=>{const e=estP(p);if(filtro==='F'&&e.done||filtro==='C'&&!e.done)return'';
+  DB[k].caps.forEach(c=>{const rows=c.p.map(p=>{const e=estP(p);if(filtro==='F'&&e.done||filtro==='C'&&!e.done||filtro==='V'&&!(e.pct>filtroMin))return'';
       return '<div class="pt" onclick="ir(\'#/reg/'+k+'/'+p.i+'\')"><span class="dot '+(e.done?'bg-ok':'bg-falta')+'"></span><span class="it">'+p.i+'</span><span class="ds">'+esc(p.d)+' <small>('+p.u+')</small></span><span class="pc '+(e.done?'c-ok':'c-falta')+'">'+n2(e.pct,0)+' %</span></div>';}).join('');
     if(rows)html+='<div class="cap">'+c.c+' '+esc(c.t)+'</div>'+rows;});
   if(!html)html='<div class="vacio">No hay partidas en este filtro.</div>';
-  app.innerHTML=bar(O.n,esc(DB[k].n),true)+'<main><div class="chips">'+chip('T','Todas')+chip('F','Faltan')+chip('C','Completadas')+'</div><div class="card" style="padding:0;overflow:hidden">'+html+'</div></main>';}
+  app.innerHTML=bar(O.n,esc(DB[k].n),true)+'<main><div class="chips">'+chip('T','Todas')+chip('F','Faltan')+chip('C','Completadas')+chip('V','Valorizadas')+'</div>'+(filtro==='V'?'<div class="card" style="padding:10px;display:flex;align-items:center;gap:8px"><span>% mínimo</span><input inputmode="decimal" value="'+filtroMin+'" style="flex:0 0 90px;padding:8px;border:2px solid var(--borde);border-radius:8px;text-align:right" onchange="filtroMin=parseFloat(this.value)||0;vObra(\''+k+'\')"><span class="sub">o más</span></div>':'')+'<div class="card" style="padding:0;overflow:hidden">'+html+'</div></main>';}
 // ---------- Pantalla 3: registro ----------
 function vReg(p){const O=OBRAS.find(o=>o.k===p.o),e=estP(p),u=und(p.u);
   const regs=regsDe(p.o,p.i);let ac=0;
@@ -232,7 +233,7 @@ function vReg(p){const O=OBRAS.find(o=>o.k===p.o),e=estP(p),u=und(p.u);
    '<label class="l">FECHA (toque para cambiarla)</label><div class="fecha"><input type="date" id="f" value="'+fechaDefecto()+'" min="'+INICIO+'" max="'+maxFecha()+'" onclick="try{this.showPicker()}catch(e){}"><button class="hoy" onclick="$(\'#f\').value=fechaDefecto();chk()">Hoy</button></div>'+
    '<label class="l">METRADO AVANZADO</label><div class="met"><input id="q" inputmode="decimal" autocomplete="off" placeholder="0.00" oninput="chk()"><span class="u">'+u+'</span></div><div id="prev" class="prev"></div><div id="err"></div>'+
    '<label class="l">OBSERVACIÓN (opcional)</label><input id="obs" class="obs" maxlength="80" placeholder="Ej.: muro eje A-B">')+
-   '<div class="info"><div class="kv"><span>Total metrado</span><b>'+n2(p.m)+' '+u+'</b></div><div class="kv"><span>Avance hasta la fecha</span><b>'+n2(e.ac/100)+' '+u+'</b></div><div class="kv"><span>Saldo metrado</span><b>'+n2(e.sal/100)+' '+u+'</b></div><div class="kv"><span>Avance</span><b>'+n2(e.pct,1)+' %</b></div><div class="kv"><span>Estado</span><span class="tag '+(e.done?'ok':'falta')+'">'+(e.done?'COMPLETADO':'FALTA')+'</span></div></div>'+
+   '<div class="info"><div class="kv"><span>Total metrado</span><b>'+n2(p.m)+' '+u+'</b></div><div class="kv"><span>Avance hasta la fecha</span><b>'+n2(e.ac/100)+' '+u+'</b></div><div class="kv"><span>Saldo metrado</span><b>'+n2(e.sal/100)+' '+u+'</b></div><div class="kv"><span>Avance</span><b>'+n2(e.pct,2)+' %</b></div><div class="kv"><span>Estado</span><span class="tag '+(e.done?'ok':'falta')+'">'+(e.done?'COMPLETADO':'FALTA')+'</span></div></div>'+
    (e.done?'<div class="acc"><button class="btn sec full" style="grid-column:1/-1" onclick="history.back()">← Volver</button></div>':'<div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" id="ok" onclick="aceptar(\''+p.o+'\',\''+p.i+'\')">ACEPTAR</button></div>')+
    '</div><div class="card"><b style="color:var(--az)">Registros anteriores</b>'+(regs.length?'<table class="hist"><thead><tr><th>FECHA</th><th>METRADO</th><th>ACUMUL.</th><th>OBS.</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td>Total</td><td>'+n2(e.ac/100)+'</td><td></td><td>'+u+'</td></tr></tfoot></table><div class="prev" style="text-align:left">Toque un registro para corregirlo o borrarlo.</div>':'<div class="vacio">Sin registros aún.</div>')+'</div></main>';
   window._p=p;}
@@ -241,7 +242,7 @@ function chk(){const p=window._p,q=$('#q');if(!q)return null;const e=$('#err'),p
   if(r.err){q.classList.add('err');e.innerHTML='<div class="err-msg">'+r.err+'</div>';return null;}
   const sal=p.mc-acumC(p.o,p.i);
   if(r.c>sal){q.classList.add('err');e.innerHTML='<div class="err-msg">⛔ Excede el metrado. Saldo disponible: '+n2(sal/100)+' '+und(p.u)+'</div>';return null;}
-  const nac=acumC(p.o,p.i)+r.c;pv.textContent='Quedará: acumulado '+n2(nac/100)+' · saldo '+n2((p.mc-nac)/100)+' · '+n2(nac/p.mc*100,1)+' %';return r.c;}
+  const nac=acumC(p.o,p.i)+r.c;pv.textContent='Quedará: acumulado '+n2(nac/100)+' · saldo '+n2((p.mc-nac)/100)+' · '+n2(nac/p.mc*100,2)+' %';return r.c;}
 function rebote(msg){const e=$('#err');e.innerHTML='<div class="err-msg">'+msg+'</div>';const c=$('.card');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');vibrar();}
 function aceptar(o,i){const p=P[o+'|'+i],q=$('#q'),f=$('#f').value;
   const ef=validarFecha(f);if(ef)return rebote('⛔ '+ef);
@@ -276,7 +277,7 @@ function textoDia(f){const L=['*AVANCE DIARIO – '+diaSem(f)+' '+fF(f)+'*',TIT2
     const items=[...new Set(rs.map(r=>r.i))].sort();let sd=0;
     items.forEach(i=>{const p=P[o.k+'|'+i];const qd=rs.filter(r=>r.i===i).reduce((s,r)=>s+r.qc,0);
       const ac=S.regs.filter(r=>r.o===o.k&&r.i===i&&r.f<=f).reduce((s,r)=>s+r.qc,0);const u=und(p.u);
-      L.push(i+' '+p.d);L.push('  Hoy: '+n2(qd/100)+' '+u+' | Acum: '+n2(ac/100)+' | Saldo: '+n2((p.mc-ac)/100)+' ('+n2(ac/p.mc*100,1)+'%)');
+      L.push(i+' '+p.d);L.push('  Hoy: '+n2(qd/100)+' '+u+' | Acum: '+n2(ac/100)+' | Saldo: '+n2((p.mc-ac)/100)+' ('+n2(ac/p.mc*100,2)+'%)');
       const obs=rs.filter(r=>r.i===i&&r.obs).map(r=>r.obs);if(obs.length)L.push('  Obs: '+obs.join('; '));if(PRES)sd+=p.s*qd/p.mc;});
     if(PRES)L.push('_Avance valorizado del día: '+sol(sd)+'_');L.push('');});
   L.push('Residente de Obra');return{txt:L.join('\n'),hay};}
@@ -294,7 +295,7 @@ const xesc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function col(n){let s='';n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
 // estilos: 0 normal,1 encabezado,2 num,3 texto borde,4 título,5 porcentaje,6 num negrita,7 texto negrita fondo,8 fecha texto centrado
 function hojaXml(sh){let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
-  x+='<sheetViews><sheetView workbookViewId="0"><pane ySplit="'+sh.frz+'" topLeftCell="A'+(sh.frz+1)+'" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
+  var _fx=sh.frzX||0,_fy=sh.frz||0,_pane=_fx?('<pane xSplit="'+_fx+'" ySplit="'+_fy+'" topLeftCell="'+col(_fx)+(_fy+1)+'" activePane="bottomRight" state="frozen"/>'):('<pane ySplit="'+_fy+'" topLeftCell="A'+(_fy+1)+'" activePane="bottomLeft" state="frozen"/>');x+='<sheetViews><sheetView workbookViewId="0">'+_pane+'</sheetView></sheetViews>';
   x+='<cols>'+sh.w.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols><sheetData>';
   sh.rows.forEach((r,ri)=>{x+='<row r="'+(ri+1)+'">';r.forEach((c,ci)=>{if(c==null)return;let v=c,s=0;if(typeof c==='object'){v=c.v;s=c.s||0;}const ref=col(ci)+(ri+1);
       if(typeof v==='number'&&isFinite(v))x+='<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>';else x+='<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xesc(v)+'</t></is></c>';});x+='</row>';});
@@ -304,7 +305,7 @@ async function libroXlsx(hojas){const z=new JSZip();
   z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
   z.file('xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+hojas.map((h,i)=>'<sheet name="'+xesc(h.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>');
   z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+hojas.map((h,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(hojas.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/></numFmts>'+
+  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.00%"/></numFmts>'+
    '<fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font></fonts>'+
    '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D5A96"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB0B8C0"/></left><right style="thin"><color rgb="FFB0B8C0"/></right><top style="thin"><color rgb="FFB0B8C0"/></top><bottom style="thin"><color rgb="FFB0B8C0"/></bottom><diagonal/></border></borders>'+
@@ -451,7 +452,7 @@ function plantilla(t,f,a){const pl=plazo();const ob=a&&a.obra&&a.obra!=='AM'?cor
   case 'ocurrencia':return 'Desde las __:__ h se presentó ____ en la '+ob+'; se suspenden los trab. de ____ y el personal pasa a ____. No afecta la ruta crítica.';
   case 'seguridad':return 'Charla de 5 minutos: ____. Personal con EPP completo y SCTR vigente. Sin incidentes.';
   case 'visita':return 'Visita a '+(a&&a.obra!=='AM'?'la '+ob:ambas())+'. Se verifica el avance según cronograma y el uso de EPP. Recomiendo: ____.';
-  case 'mes':{const m=MESES[+f.slice(5,7)-1];return 'Cierre de '+m+' '+f.slice(0,4)+'. Avance físico acumulado: '+OBRAS.map(o=>corto(o.k).col+' '+n2(resObra(o.k).pct,1)+' %').join(', ')+'. Plazo transcurrido: '+n2(pl.pct,1)+' % (día '+pl.dia+' de '+PLAZO+'). Se elabora la Valorización de Avance N° __ (Formato N° 18) y el Informe Mensual del Residente N° __ (Formato N° 33).';}
+  case 'mes':{const m=MESES[+f.slice(5,7)-1];return 'Cierre de '+m+' '+f.slice(0,4)+'. Avance físico acumulado: '+OBRAS.map(o=>corto(o.k).col+' '+n2(resObra(o.k).pct,2)+' %').join(', ')+'. Plazo transcurrido: '+n2(pl.pct,2)+' % (día '+pl.dia+' de '+PLAZO+'). Se elabora la Valorización de Avance N° __ (Formato N° 18) y el Informe Mensual del Residente N° __ (Formato N° 33).';}
   case 'inicio':return 'Apertura del presente Cuaderno de Obra, legalizado ante ____, de la intervención '+(TIT2||TIT)+', en '+lista(OBRAS.map(o=>corto(o.k).lar))+'. Plazo: '+PLAZO+' días calendario, del '+fF(INICIO)+' al '+fF(FIN)+'. Residente: ____. Supervisor de Proyectos: ____.';
   case 'termino':return 'Terminación de la intervención física el '+fF(f)+'. Se suscribieron el Acta de Terminación de la Intervención Física (Formato N° 39) y el Acta de Compromiso de Operación y Mantenimiento (Formato N° 38). Con este asiento se da por cerrado el presente Cuaderno de Obra, que consta de __ folios.';
   default:return '';}}
@@ -716,6 +717,99 @@ document.addEventListener('click',function(ev){const b=ev.target.closest&&ev.tar
  if(!guardar()){S.regs.pop();return;}
  bg._close?bg._close('ok'):bg.remove();toast('✔ Metrado agregado');render();
 });
+
+
+// ========== v3.1: reportes (matriz metrado, valorización F18) en Excel y PDF ==========
+const MESU=ym=>MESES[+ym.slice(5,7)-1].toUpperCase()+' '+ym.slice(0,4);
+function diasMes(ym){const [y,m]=ym.split('-').map(Number);const last=new Date(y,m,0).getDate();const a=[];for(let d=1;d<=last;d++){const f=ym+'-'+pad(d);if(f>=INICIO&&f<=FIN)a.push(f);}return a;}
+function mesesPlazo(){const a=[];let d=INICIO.slice(0,7);const fin=FIN.slice(0,7);while(d<=fin){a.push(d);const [y,m]=d.split('-').map(Number);d=(m===12?(y+1)+'-01':y+'-'+pad(m+1));}return a;}
+function qDia(o,i,f){return S.regs.filter(x=>x.o===o&&x.i===i&&x.f===f).reduce((s,x)=>s+x.qc,0);}
+// ---- matriz de metrado diario (una hoja, Azángaro y Umachiri) ----
+function hojaMatriz(ym){const dias=diasMes(ym);const H=['ÍTEM','DESCRIPCIÓN','UND','METRADO'].concat(dias.map(f=>f.slice(8,10)));
+ const rows=[[{v:'METRADO DIARIO – '+MESU(ym)+(TIT2?' – '+TIT2:''),s:4}],[{v:'Convenio '+CFG().conv+' · Expediente '+CFG().exp+' · corte '+fF(hoy()),s:0}],[],H.map(h=>({v:h,s:1}))];
+ OBRAS.forEach(o=>{rows.push([{v:o.n,s:7}].concat(Array.from({length:H.length-1},()=>({v:'',s:7}))));
+  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{const r=[{v:p.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:p.m,s:2}];
+   dias.forEach(f=>{const q=qDia(o.k,p.i,f);r.push({v:q?q/100:'',s:2});});rows.push(r);}));});
+ return{name:'METRADO DIARIO',frz:4,frzX:4,w:[9,46,6,10].concat(dias.map(()=>6.5)),rows};}
+function matrizHTML(ym){const dias=diasMes(ym);
+ let th='<th>ÍTEM</th><th class="l">DESCRIPCIÓN</th><th>UND</th><th>METR.</th>'+dias.map(f=>'<th>'+f.slice(8,10)+'</th>').join('');
+ let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td colspan="'+(4+dias.length)+'">'+esc(o.n)+'</td></tr>';
+  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{body+='<tr><td>'+p.i+'</td><td class="l">'+esc(p.d)+'</td><td>'+esc(und(p.u))+'</td><td class="n">'+n2(p.m)+'</td>'+dias.map(f=>{const q=qDia(o.k,p.i,f);return '<td class="n">'+(q?n2(q/100):'')+'</td>';}).join('')+'</tr>';}));});
+ return docHTML('Metrado diario – '+MESU(ym),'landscape',
+  '<h1>METRADO DIARIO – '+esc(MESU(ym))+'</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · corte '+fF(hoy())+'</div>'+
+  '<table class="g"><thead><tr>'+th+'</tr></thead><tbody>'+body+'</tbody></table>');}
+// ---- valorización Formato 18 ----
+function valObra(k,corte){const mes=corte.slice(0,7),first=mes+'-01';let T={presup:0,antV:0,actV:0,acuV:0,salV:0};
+ const filas=[];DB[k].caps.forEach(c=>c.p.forEach(p=>{const pu=p.pu||0,presup=p.s||0;
+  const antM=S.regs.filter(x=>x.o===k&&x.i===p.i&&x.f<first).reduce((s,x)=>s+x.qc,0)/100;
+  const actM=S.regs.filter(x=>x.o===k&&x.i===p.i&&x.f>=first&&x.f<=corte).reduce((s,x)=>s+x.qc,0)/100;
+  const acuM=antM+actM,salM=p.m-acuM;
+  const f={i:p.i,d:p.d,u:p.u,metT:p.m,pu,presup,antM,antV:antM*pu,actM,actV:actM*pu,acuM,acuV:acuM*pu,salM,salV:salM*pu};
+  T.presup+=presup;T.antV+=f.antV;T.actV+=f.actV;T.acuV+=f.acuV;T.salV+=f.salV;filas.push(f);}));
+ return{filas,T};}
+function hojaVal(k,corte){const {filas,T}=valObra(k,corte);const mes=corte.slice(0,7);
+ const P=(v,b)=>b?v/b:0;
+ const rows=[[{v:'FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN – '+(OBRAS.find(o=>o.k===k)||{n:k}).n,s:4}],
+  [{v:'CORRESPONDIENTE AL MES DE '+MESU(mes)+' (al '+fF(corte)+')',s:0}],
+  [{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp,s:0}],[],
+  [{v:'PARTIDA',s:1},{v:'DESCRIPCIÓN',s:1},{v:'PRESUPUESTO',s:1},{v:'',s:1},{v:'',s:1},{v:'',s:1},{v:'ANTERIOR',s:1},{v:'',s:1},{v:'',s:1},{v:'ACTUAL',s:1},{v:'',s:1},{v:'',s:1},{v:'ACUMULADO',s:1},{v:'',s:1},{v:'',s:1},{v:'SALDO',s:1},{v:'',s:1},{v:'',s:1}],
+  ['','Unid','Metrado','P.Unit','Presup. S/','Metrado','Valorizado','%','Metrado','Valorizado','%','Metrado','Valorizado','%','Metrado','Valorizado','%'].map((h,idx)=>({v:idx===0?'':h,s:1}))];
+ // fix header row2 first two cells
+ rows[5]=[{v:'',s:1},{v:'',s:1},{v:'Unid',s:1},{v:'Metrado',s:1},{v:'P.Unit',s:1},{v:'Presup. S/',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1}];
+ filas.forEach(f=>rows.push([{v:f.i,s:8},{v:f.d,s:3},{v:esc0(f.u),s:8},{v:f.metT,s:2},{v:f.pu,s:2},{v:f.presup,s:2},
+   {v:f.antM||'',s:2},{v:f.antV||'',s:2},{v:P(f.antV,f.presup),s:5},
+   {v:f.actM||'',s:2},{v:f.actV||'',s:2},{v:P(f.actV,f.presup),s:5},
+   {v:f.acuM||'',s:2},{v:f.acuV||'',s:2},{v:P(f.acuV,f.presup),s:5},
+   {v:f.salM,s:2},{v:f.salV,s:2},{v:P(f.salV,f.presup),s:5}]));
+ rows.push([{v:'',s:6},{v:'COSTO DIRECTO / TOTAL',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:T.presup,s:6},
+   {v:'',s:6},{v:T.antV,s:6},{v:P(T.antV,T.presup),s:6},{v:'',s:6},{v:T.actV,s:6},{v:P(T.actV,T.presup),s:6},
+   {v:'',s:6},{v:T.acuV,s:6},{v:P(T.acuV,T.presup),s:6},{v:'',s:6},{v:T.salV,s:6},{v:P(T.salV,T.presup),s:6}]);
+ const merge=['A1:R1','A2:R2','A3:R3','C5:F5','G5:I5','J5:L5','M5:O5','P5:R5','A5:A6','B5:B6'];
+ return{name:'F18 '+k,frz:6,frzX:2,w:[9,42,6,10,9,12,10,12,7,10,12,7,10,12,7,10,12,7],rows,merge};}
+const esc0=u=>und(u);
+function valHTMLobra(k,corte){const {filas,T}=valObra(k,corte),mes=corte.slice(0,7);const pc=(v,b)=>b?n2(v/b*100):'0.00';
+ let body=filas.map(f=>'<tr><td>'+f.i+'</td><td class="l">'+esc(f.d)+'</td><td>'+esc(und(f.u))+'</td><td class="n">'+n2(f.metT)+'</td><td class="n">'+n2(f.pu)+'</td><td class="n">'+n2(f.presup)+'</td>'+
+  '<td class="n">'+(f.antM?n2(f.antM):'')+'</td><td class="n">'+(f.antV?n2(f.antV):'')+'</td><td class="n">'+pc(f.antV,f.presup)+'</td>'+
+  '<td class="n">'+(f.actM?n2(f.actM):'')+'</td><td class="n">'+(f.actV?n2(f.actV):'')+'</td><td class="n">'+pc(f.actV,f.presup)+'</td>'+
+  '<td class="n">'+(f.acuM?n2(f.acuM):'')+'</td><td class="n">'+(f.acuV?n2(f.acuV):'')+'</td><td class="n">'+pc(f.acuV,f.presup)+'</td>'+
+  '<td class="n">'+n2(f.salM)+'</td><td class="n">'+n2(f.salV)+'</td><td class="n">'+pc(f.salV,f.presup)+'</td></tr>').join('');
+ const tot='<tr class="t"><td colspan="5">COSTO DIRECTO / TOTAL</td><td class="n">'+n2(T.presup)+'</td><td></td><td class="n">'+n2(T.antV)+'</td><td class="n">'+pc(T.antV,T.presup)+'</td><td></td><td class="n">'+n2(T.actV)+'</td><td class="n">'+pc(T.actV,T.presup)+'</td><td></td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+pc(T.acuV,T.presup)+'</td><td></td><td class="n">'+n2(T.salV)+'</td><td class="n">'+pc(T.salV,T.presup)+'</td></tr>';
+ return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc((OBRAS.find(o=>o.k===k)||{n:k}).n)+' · Correspondiente al mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+  '<table class="g"><thead><tr><th rowspan="2">PARTIDA</th><th rowspan="2" class="l">DESCRIPCIÓN</th><th colspan="4">PRESUPUESTO</th><th colspan="3">ANTERIOR</th><th colspan="3">ACTUAL</th><th colspan="3">ACUMULADO</th><th colspan="3">SALDO</th></tr>'+
+  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML(['ADMINISTRADOR','RESIDENTE','SUPERVISOR'],corte);}
+function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));let gp=0,ga=0;
+ let rows=t.map(x=>{gp+=x.v.presup;ga+=x.v.acuV;return '<tr><td class="l">'+esc(x.o.n)+'</td><td class="n">'+n2(x.v.presup)+'</td><td class="n">'+n2(x.v.acuV)+'</td><td class="n">'+n2(x.v.presup-x.v.acuV)+'</td><td class="n">'+(x.v.presup?n2(x.v.acuV/x.v.presup*100):'0.00')+'</td></tr>';}).join('');
+ rows+='<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+n2(gp-ga)+'</td><td class="n">'+(gp?n2(ga/gp*100):'0.00')+'</td></tr>';
+ const pl=plazo();
+ return '<h1>RESUMEN DE AVANCE – '+esc(TIT||'PAQUETE')+'</h1><div class="sub">Al '+fF(corte)+' · Convenio '+esc(CFG().conv)+'</div>'+
+  '<table class="g"><thead><tr><th class="l">COMPONENTE</th><th>PRESUPUESTO</th><th>VALORIZADO</th><th>SALDO</th><th>% AVANCE</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %</div>';}
+function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
+ return '<div class="fir">'+roles.map(r=>{const a=agVig(n[r]||r,corte);return '<div><div class="ln"></div><b>'+esc(r)+'</b><div>'+esc(a?a.nom:'')+'</div><div>'+(a&&a.dni?'DNI '+a.dni:'')+'</div></div>';}).join('')+'</div>';}
+function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
+function imprimir(html){const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();return;}
+ const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);const d=f.contentWindow.document;d.open();d.write(html);d.close();setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>f.remove(),2000);},600);}
+// ---- Hub de reportes ----
+function vRep(f0){const corte=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:maxFecha();const ym=corte.slice(0,7);
+ const rep=(t,d,botones)=>'<div class="card"><div class="est" style="margin:0"><b>'+t+'</b></div><div class="sub">'+d+'</div><div class="btns" style="margin-top:6px">'+botones+'</div></div>';
+ const msel=mesesPlazo().map(m=>'<option value="'+m+'"'+(m===ym?' selected':'')+'>'+MESU(m)+'</option>').join('');
+ app.innerHTML=bar('REPORTES / EXPORTAR','Excel y PDF',true)+'<main>'+
+  '<div class="card"><label class="l">FECHA DE CORTE (hasta)</label><div class="fecha"><input type="date" id="rF" value="'+corte+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="ir(\'#/rep/\'+this.value,true)" onclick="try{this.showPicker()}catch(e){}"></div><label class="l">MES (para la matriz)</label><select id="rMes" class="sel">'+msel+'</select></div>'+
+  rep('📊 Matriz de metrado diario','Ítem, descripción, unidad, metrado y los días del mes. Azángaro y Umachiri.',
+    '<button class="btn" onclick="expMatriz($(\'#rMes\').value,0)">Excel</button><button class="btn sec" onclick="expMatriz($(\'#rMes\').value,1)">PDF</button>')+
+  rep('💰 Valorización (Formato 18)','Avance valorizado: anterior, actual, acumulado y saldo, por obra y total.',
+    (PRES?'<button class="btn" onclick="expVal(\''+'E'+'\')">Excel</button><button class="btn sec" onclick="expVal(\'P\')">PDF</button>':'<span class="sub" style="color:var(--mal)">Cargue el presupuesto en Ajustes para habilitarlo.</span>'))+
+  rep('📈 Resumen de avance consolidado','Azángaro + Umachiri en soles, con el total de la obra.',
+    (PRES?'<button class="btn sec" onclick="imprimir(docHTML(\'Resumen\',\'portrait\',valTotalHTML(repCorte())))">PDF</button>':'<span class="sub" style="color:var(--mal)">Requiere presupuesto.</span>'))+
+  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>Formatos 9, 10, 15, 16, 19 · Cuaderno PDF · Panel fotográfico</b><span class="tag falta">v3.2+</span></div><div class="sub">Se activan con sus módulos (almacén, tareo, fotos).</div></div>'+
+  '<div class="prev" style="text-align:left">Los formatos oficiales saldrán idénticos a la guía MACA 2026, con cabecera y firmas automáticas.</div></main>';}
+function repCorte(){const el=$('#rF');return el&&el.value?el.value:maxFecha();}
+async function expMatriz(ym,pdf){ym=ym||hoy().slice(0,7);if(pdf){imprimir(matrizHTML(ym));return;}
+ try{const blob=await libroXlsx([hojaMatriz(ym)]);pickGuardar(blob,'Metrado_Diario_'+ym+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
+async function expVal(modo){const corte=repCorte();if(!PRES)return aviso('Cargue el presupuesto para generar la valorización.');
+ if(modo==='P'){imprimir(docHTML('Valorización F18','landscape',OBRAS.map(o=>valHTMLobra(o.k,corte)+'<div style="page-break-after:always"></div>').join('')+valTotalHTML(corte)));return;}
+ try{const blob=await libroXlsx(OBRAS.map(o=>hojaVal(o.k,corte)));pickGuardar(blob,'Valorizacion_F18_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
+async function pickGuardar(blob,nombre){const v=await modal('<h3>Archivo listo</h3><p>'+esc(nombre)+'</p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}
 
 // ---------- inicio ----------
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
