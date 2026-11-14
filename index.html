@@ -307,9 +307,9 @@ async function libroXlsx(hojas){const z=new JSZip();
   z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+hojas.map((h,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(hojas.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
   z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.00%"/></numFmts>'+
    '<fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font></fonts>'+
-   '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D5A96"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF4"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+   '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D5A96"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF4"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF8CBAD"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill></fills>'+
    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB0B8C0"/></left><right style="thin"><color rgb="FFB0B8C0"/></right><top style="thin"><color rgb="FFB0B8C0"/></top><bottom style="thin"><color rgb="FFB0B8C0"/></bottom><diagonal/></border></borders>'+
-   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9">'+
+   '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="13">'+
    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>'+
@@ -319,7 +319,7 @@ async function libroXlsx(hojas){const z=new JSZip();
    '<xf numFmtId="164" fontId="2" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>'+
    '<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'+
    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>'+
-   '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
+   '<xf numFmtId="0" fontId="2" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="164" fontId="0" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFill="1" applyBorder="1"/><xf numFmtId="164" fontId="2" fillId="5" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/><xf numFmtId="0" fontId="2" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>');
   hojas.forEach((h,i)=>z.file('xl/worksheets/sheet'+(i+1)+'.xml',hojaXml(h)));
   return z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});}
 function hojaObra(o){const M=!!PRES;const H=['ITEM','PARTIDA','UND','METRADO EXPEDIENTE','METRADO REGISTRADO','SALDO METRADO','% AVANCE'].concat(M?['P.U. (S/)','PRESUPUESTO (S/)','AVANCE (S/)','SALDO (S/)']:[]);const nc=H.length,LC=col(nc-1);
@@ -610,7 +610,7 @@ function seedAgentes(){return [
  {rol:'ALMACENERO',nom:'',dni:''}
 ].map(a=>Object.assign({id:uid(),cat:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:a.rol==='RESIDENTE'?1:0,obs:''},a));}
 function CA(){if(!Array.isArray(S.agentes)){S.agentes=seedAgentes();guardar();}return S.agentes;}
-function CFG(){if(!S.cfg)S.cfg={};const c=S.cfg;if(!c.conv)c.conv='22-2026-0008';if(!c.exp)c.exp='22-2026-0008';if(c.interv==null)c.interv=TIT2||TIT||'';if(!c.jornal)c.jornal={OPE:136.32,OFI:112.00,PEON:99.04};return c;}
+function CFG(){if(!S.cfg)S.cfg={};const c=S.cfg;if(!c.conv)c.conv='22-2026-0008';if(!c.exp)c.exp='22-2026-0008';if(c.interv==null)c.interv=TIT2||TIT||'';if(!c.jornal)c.jornal={OPE:136.32,OFI:112.00,PEON:99.04};if(!c.feriados)c.feriados=['2026-12-08','2026-12-09','2026-12-25','2027-01-01'];return c;}
 const desdeEf=a=>a.desde||INICIO;
 function agVig(rol,fecha,cat){const f=fecha||hoy();return CA().filter(a=>a.rol===rol&&(!cat||a.cat===cat)&&a.nom&&desdeEf(a)<=f&&(!a.hasta||a.hasta>=f)).sort((x,y)=>(y.orden-x.orden)||(desdeEf(y)<desdeEf(x)?-1:1))[0]||null;}
 function nomVig(rol,fecha){const a=agVig(rol,fecha);return a?a.nom:'';}
@@ -721,23 +721,32 @@ document.addEventListener('click',function(ev){const b=ev.target.closest&&ev.tar
 
 // ========== v3.1: reportes (matriz metrado, valorización F18) en Excel y PDF ==========
 const MESU=ym=>MESES[+ym.slice(5,7)-1].toUpperCase()+' '+ym.slice(0,4);
+function fechaMas(f,k){const d=new Date(Date.parse(f+'T12:00:00')+k*864e5);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function diasRango(corte){const c=corte>FIN?FIN:corte;const a=[];for(let k=0;k<=diffD(INICIO,c);k++)a.push(fechaMas(INICIO,k));return a;}
+const letraDia=f=>['D','L','M','M','J','V','S'][new Date(f+'T12:00:00').getDay()];
+const esHl=f=>new Date(f+'T12:00:00').getDay()===0||(CFG().feriados||[]).includes(f);
 function diasMes(ym){const [y,m]=ym.split('-').map(Number);const last=new Date(y,m,0).getDate();const a=[];for(let d=1;d<=last;d++){const f=ym+'-'+pad(d);if(f>=INICIO&&f<=FIN)a.push(f);}return a;}
 function mesesPlazo(){const a=[];let d=INICIO.slice(0,7);const fin=FIN.slice(0,7);while(d<=fin){a.push(d);const [y,m]=d.split('-').map(Number);d=(m===12?(y+1)+'-01':y+'-'+pad(m+1));}return a;}
 function qDia(o,i,f){return S.regs.filter(x=>x.o===o&&x.i===i&&x.f===f).reduce((s,x)=>s+x.qc,0);}
 // ---- matriz de metrado diario (una hoja, Azángaro y Umachiri) ----
-function hojaMatriz(ym){const dias=diasMes(ym);const H=['ÍTEM','DESCRIPCIÓN','UND','METRADO'].concat(dias.map(f=>f.slice(8,10)));
- const rows=[[{v:'METRADO DIARIO – '+MESU(ym)+(TIT2?' – '+TIT2:''),s:4}],[{v:'Convenio '+CFG().conv+' · Expediente '+CFG().exp+' · corte '+fF(hoy()),s:0}],[],H.map(h=>({v:h,s:1}))];
- OBRAS.forEach(o=>{rows.push([{v:o.n,s:7}].concat(Array.from({length:H.length-1},()=>({v:'',s:7}))));
-  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{const r=[{v:p.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:p.m,s:2}];
-   dias.forEach(f=>{const q=qDia(o.k,p.i,f);r.push({v:q?q/100:'',s:2});});rows.push(r);}));});
- return{name:'METRADO DIARIO',frz:4,frzX:4,w:[9,46,6,10].concat(dias.map(()=>6.5)),rows};}
-function matrizHTML(ym){const dias=diasMes(ym);
- let th='<th>ÍTEM</th><th class="l">DESCRIPCIÓN</th><th>UND</th><th>METR.</th>'+dias.map(f=>'<th>'+f.slice(8,10)+'</th>').join('');
- let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td colspan="'+(4+dias.length)+'">'+esc(o.n)+'</td></tr>';
-  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{body+='<tr><td>'+p.i+'</td><td class="l">'+esc(p.d)+'</td><td>'+esc(und(p.u))+'</td><td class="n">'+n2(p.m)+'</td>'+dias.map(f=>{const q=qDia(o.k,p.i,f);return '<td class="n">'+(q?n2(q/100):'')+'</td>';}).join('')+'</tr>';}));});
- return docHTML('Metrado diario – '+MESU(ym),'landscape',
-  '<h1>METRADO DIARIO – '+esc(MESU(ym))+'</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · corte '+fF(hoy())+'</div>'+
-  '<table class="g"><thead><tr>'+th+'</tr></thead><tbody>'+body+'</tbody></table>');}
+function hojaMatriz(corte){const dias=diasRango(corte),n=dias.length,LC=col(6+n);
+ const h1=[{v:'ÍTEM',s:1},{v:'DESCRIPCIÓN',s:1},{v:'UND',s:1},{v:'METRADO',s:1}].concat(dias.map(f=>({v:letraDia(f),s:esHl(f)?9:1}))).concat([{v:'METRADO ACUMULADO',s:12},{v:'SALDO',s:1},{v:'% AVANCE',s:1}]);
+ const h2=[{v:'',s:1},{v:'',s:1},{v:'',s:1},{v:'',s:1}].concat(dias.map(f=>({v:+f.slice(8,10),s:esHl(f)?9:1}))).concat([{v:'',s:12},{v:'',s:1},{v:'',s:1}]);
+ const rows=[[{v:'METRADO DIARIO – del '+fF(INICIO)+' al '+fF(dias[n-1])+(TIT2?' – '+TIT2:''),s:4}],[{v:'Convenio '+CFG().conv+' · Expediente '+CFG().exp+' · ejecución con presupuesto contractual',s:0}],[],h1,h2];
+ OBRAS.forEach(o=>{rows.push([{v:o.n,s:7}].concat(Array.from({length:6+n},()=>({v:'',s:7}))));
+  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{let acu=0;const dc=dias.map(f=>{const q=qDia(o.k,p.i,f);acu+=q;return{v:q?q/100:'',s:esHl(f)?10:2};});
+   rows.push([{v:p.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:p.m,s:2}].concat(dc).concat([{v:acu?acu/100:0,s:11},{v:(p.mc-acu)/100,s:2},{v:p.mc?acu/p.mc:0,s:5}]));}));});
+ const merge=['A1:'+LC+'1','A2:'+LC+'2','A4:A5','B4:B5','C4:C5','D4:D5',col(4+n)+'4:'+col(4+n)+'5',col(5+n)+'4:'+col(5+n)+'5',col(6+n)+'4:'+col(6+n)+'5'];
+ return{name:'METRADO DIARIO',frz:5,frzX:4,w:[9,44,6,10].concat(dias.map(()=>5)).concat([13,9,9]),rows,merge};}
+function matrizHTML(corte){const dias=diasRango(corte);
+ const h1='<th rowspan=\"2\">ÍTEM</th><th rowspan=\"2\" class=\"l\">DESCRIPCIÓN</th><th rowspan=\"2\">UND</th><th rowspan=\"2\">METRADO</th>'+dias.map(f=>'<th class=\"'+(esHl(f)?'hl':'')+'\">'+letraDia(f)+'</th>').join('')+'<th rowspan=\"2\" class=\"ac\">METR. ACUMUL.</th><th rowspan=\"2\">SALDO</th><th rowspan=\"2\">% AV.</th>';
+ const h2=dias.map(f=>'<th class=\"'+(esHl(f)?'hl':'')+'\">'+(+f.slice(8,10))+'</th>').join('');
+ let body='';OBRAS.forEach(o=>{body+='<tr class=\"ob\"><td colspan=\"'+(7+dias.length)+'\">'+esc(o.n)+'</td></tr>';
+  DB[o.k].caps.forEach(c=>c.p.forEach(p=>{let acu=0;const dc=dias.map(f=>{const q=qDia(o.k,p.i,f);acu+=q;return '<td class=\"n '+(esHl(f)?'hl':'')+'\">'+(q?n2(q/100):'')+'</td>';}).join('');
+   body+='<tr><td>'+p.i+'</td><td class=\"l\">'+esc(p.d)+'</td><td>'+esc(und(p.u))+'</td><td class=\"n\">'+n2(p.m)+'</td>'+dc+'<td class=\"n ac\">'+n2(acu/100)+'</td><td class=\"n\">'+n2((p.mc-acu)/100)+'</td><td class=\"n\">'+n2(p.mc?acu/p.mc*100:0)+'</td></tr>';}));});
+ return docHTML('Metrado diario','landscape',
+  '<h1>METRADO DIARIO – del '+fF(INICIO)+' al '+fF(dias[dias.length-1])+'</h1><div class=\"sub\">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+'</div>'+
+  '<table class=\"g mat\"><thead><tr>'+h1+'</tr><tr>'+h2+'</tr></thead><tbody>'+body+'</tbody></table>');}
 // ---- valorización Formato 18 ----
 function valObra(k,corte){const mes=corte.slice(0,7),first=mes+'-01';let T={presup:0,antV:0,actV:0,acuV:0,salV:0};
  const filas=[];DB[k].caps.forEach(c=>c.p.forEach(p=>{const pu=p.pu||0,presup=p.s||0;
@@ -786,17 +795,16 @@ function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));
   '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %</div>';}
 function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
  return '<div class="fir">'+roles.map(r=>{const a=agVig(n[r]||r,corte);return '<div><div class="ln"></div><b>'+esc(r)+'</b><div>'+esc(a?a.nom:'')+'</div><div>'+(a&&a.dni?'DNI '+a.dni:'')+'</div></div>';}).join('')+'</div>';}
-function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
+function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}.hl{background:#f8cbad}.ac{background:#c6efce}table.g.mat th{font-size:6.5pt;padding:1px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
 function imprimir(html){const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();return;}
  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);const d=f.contentWindow.document;d.open();d.write(html);d.close();setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>f.remove(),2000);},600);}
 // ---- Hub de reportes ----
 function vRep(f0){const corte=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:maxFecha();const ym=corte.slice(0,7);
  const rep=(t,d,botones)=>'<div class="card"><div class="est" style="margin:0"><b>'+t+'</b></div><div class="sub">'+d+'</div><div class="btns" style="margin-top:6px">'+botones+'</div></div>';
- const msel=mesesPlazo().map(m=>'<option value="'+m+'"'+(m===ym?' selected':'')+'>'+MESU(m)+'</option>').join('');
  app.innerHTML=bar('REPORTES / EXPORTAR','Excel y PDF',true)+'<main>'+
-  '<div class="card"><label class="l">FECHA DE CORTE (hasta)</label><div class="fecha"><input type="date" id="rF" value="'+corte+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="ir(\'#/rep/\'+this.value,true)" onclick="try{this.showPicker()}catch(e){}"></div><label class="l">MES (para la matriz)</label><select id="rMes" class="sel">'+msel+'</select></div>'+
-  rep('📊 Matriz de metrado diario','Ítem, descripción, unidad, metrado y los días del mes. Azángaro y Umachiri.',
-    '<button class="btn" onclick="expMatriz($(\'#rMes\').value,0)">Excel</button><button class="btn sec" onclick="expMatriz($(\'#rMes\').value,1)">PDF</button>')+
+  '<div class="card"><label class="l">FECHA DE CORTE (hasta)</label><div class="fecha"><input type="date" id="rF" value="'+corte+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="ir(\'#/rep/\'+this.value,true)" onclick="try{this.showPicker()}catch(e){}"></div><div class="sub" style="margin-top:4px">La matriz y la valorización usan esta fecha.</div></div>'+
+  rep('📊 Matriz de metrado diario','Del inicio del plazo ('+fF(INICIO)+') a la fecha de corte. Día de la semana, domingos y feriados resaltados; acumulado, saldo y %. Azángaro y Umachiri.',
+    '<button class="btn" onclick="expMatriz(0)">Excel</button><button class="btn sec" onclick="expMatriz(1)">PDF</button>')+
   rep('💰 Valorización (Formato 18)','Avance valorizado: anterior, actual, acumulado y saldo, por obra y total.',
     (PRES?'<button class="btn" onclick="expVal(\''+'E'+'\')">Excel</button><button class="btn sec" onclick="expVal(\'P\')">PDF</button>':'<span class="sub" style="color:var(--mal)">Cargue el presupuesto en Ajustes para habilitarlo.</span>'))+
   rep('📈 Resumen de avance consolidado','Azángaro + Umachiri en soles, con el total de la obra.',
@@ -804,8 +812,8 @@ function vRep(f0){const corte=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:maxFecha();c
   '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>Formatos 9, 10, 15, 16, 19 · Cuaderno PDF · Panel fotográfico</b><span class="tag falta">v3.2+</span></div><div class="sub">Se activan con sus módulos (almacén, tareo, fotos).</div></div>'+
   '<div class="prev" style="text-align:left">Los formatos oficiales saldrán idénticos a la guía MACA 2026, con cabecera y firmas automáticas.</div></main>';}
 function repCorte(){const el=$('#rF');return el&&el.value?el.value:maxFecha();}
-async function expMatriz(ym,pdf){ym=ym||hoy().slice(0,7);if(pdf){imprimir(matrizHTML(ym));return;}
- try{const blob=await libroXlsx([hojaMatriz(ym)]);pickGuardar(blob,'Metrado_Diario_'+ym+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
+async function expMatriz(pdf){const corte=repCorte();if(pdf){imprimir(matrizHTML(corte));return;}
+ try{const blob=await libroXlsx([hojaMatriz(corte)]);pickGuardar(blob,'Metrado_Diario_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
 async function expVal(modo){const corte=repCorte();if(!PRES)return aviso('Cargue el presupuesto para generar la valorización.');
  if(modo==='P'){imprimir(docHTML('Valorización F18','landscape',OBRAS.map(o=>valHTMLobra(o.k,corte)+'<div style="page-break-after:always"></div>').join('')+valTotalHTML(corte)));return;}
  try{const blob=await libroXlsx(OBRAS.map(o=>hojaVal(o.k,corte)));pickGuardar(blob,'Valorizacion_F18_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
