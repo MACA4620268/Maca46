@@ -130,7 +130,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='2.2';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.0';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -185,6 +185,10 @@ function render(){if(bloqueado)return;document.querySelectorAll('.modal-bg').for
   if(h[0]==='respaldo')return vResp();
   if(h[0]==='cuad')return vCuad();
   if(h[0]==='as')return vAsiento(h[1],h[2],h[3]);
+  if(h[0]==='parte')return vParte(h[1]);
+  if(h[0]==='agentes')return vAgentes();
+  if(h[0]==='config')return vConfig();
+  if(h[0]==='import')return vImport();
   vInicio();}
 // ---------- Pantalla 1: inicio ----------
 let instalarEvt=null;
@@ -204,7 +208,7 @@ function vInicio(){const pl=plazo();let tp=0,ta=0,spct=0;
     :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,1)+' %</b></div></div>';
   app.innerHTML=bar('AVANCE DE OBRA'+(TIT?' – '+esc(TIT):''),'Hoy: '+fF(hoy()),false)+'<main>'+
    '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,1)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
-   '<div class="btns"><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
+   '<div class="btns"><button class="btn full ok" onclick="ir(\'#/parte/\'+fechaDefecto())">📋 Parte Diario</button><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="exportarExcel()">📊 Exportar Excel</button><button class="btn" onclick="ir(\'#/agentes\')">👷 Agentes</button><button class="btn" onclick="ir(\'#/import\')">🗂️ Datos</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
    (instalarEvt?'<button class="btn ok full" onclick="instalar()">📲 Instalar aplicación</button>':'')+'</div>'+
    '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
 function instalar(){if(!instalarEvt)return;instalarEvt.prompt();instalarEvt.userChoice.finally(()=>{instalarEvt=null;render();});}
@@ -358,14 +362,14 @@ async function cargarObraArchivo(file){if(!file)return;try{const x=await leerJso
     if(cf.falt.length)throw new Error('No se cargó: hay registros en partidas que no existen en el archivo nuevo ('+cf.falt.slice(0,5).join(', ')+'). Revise el archivo.');
     if(OB||cf.exc.length){const c=await modal('<h3>'+(OB?'¿Reemplazar el archivo de la obra?':'Cargar archivo')+'</h3><p>'+esc(x.subtitulo||x.titulo||'')+'<br>Sus '+S.regs.length+' registros se conservan.</p>'+(cf.exc.length?'<div class="err-msg">⚠ En '+cf.exc.length+' partida(s) lo registrado supera el nuevo metrado: '+esc(cf.exc.slice(0,5).join(', '))+'. Deberá corregir esos registros.</div>':'')+'<div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn ok" data-v="si">Cargar</button></div>');if(c!=='si')return;}
     x.cargado=hoy();localStorage.setItem(KOBRA,JSON.stringify(x));aplicarObra(x);toast('✔ Archivo de obra cargado');ir('#/',true);render();}catch(e){aviso(e.message);}}
-function hacerResp(modo){const d={app:'avobra',v:3,fecha:new Date().toISOString(),regs:S.regs,cuad:S.cuad||null,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
+function hacerResp(modo){const d={app:'avobra',v:4,fecha:new Date().toISOString(),regs:S.regs,cuad:S.cuad||null,agentes:S.agentes||null,cfg:S.cfg||null,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
   if(modo==='sh')compartirArchivo(blob,nombre);else descargar(blob,nombre);S.lastBackup=Date.now();guardar();setTimeout(render,300);}
 async function restaurar(file){if(!file)return;try{const d=await leerJson(file);if(d.app!=='avobra'||!Array.isArray(d.regs))throw new Error('El archivo no es un respaldo de esta aplicación.');
     let ob=null;try{if(d.obra&&obraValida(d.obra))ob=d.obra;}catch(e){}const base=ob||OB;if(!base)throw new Error('Este respaldo no trae el archivo de la obra. Cargue primero el archivo de la obra.');
     const ix={};base.obras.forEach(o=>o.caps.forEach(c=>c.p.forEach(q=>{ix[o.k+'|'+q.i]=1;})));
     const ok=d.regs.filter(r=>r&&ix[r.o+'|'+r.i]&&/^\d{4}-\d\d-\d\d$/.test(r.f)&&Number.isInteger(r.qc)&&r.qc>0);
     const c=await modal('<h3>¿Restaurar respaldo?</h3><p>El respaldo tiene <b>'+ok.length+'</b> registros (del '+fF((d.fecha||'').slice(0,10))+')'+(ob?' y el archivo de la obra':'')+'.<br>'+(d.cuad&&d.cuad.as&&d.cuad.as.length?'Incluye '+d.cuad.as.length+' asiento(s) del cuaderno. ':'')+'Se <b>reemplazarán</b> los '+S.regs.length+' registros actuales.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Restaurar</button></div>');
-    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(d.cuad&&Array.isArray(d.cuad.as))S.cuad={inicio:+d.cuad.inicio||0,as:d.cuad.as.filter(a=>a&&a.n>0&&/^\d{4}-\d\d-\d\d$/.test(a.f)&&typeof a.txt==='string')};if(!guardar()){S.regs=bk;return;}
+    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(d.cuad&&Array.isArray(d.cuad.as))S.cuad={inicio:+d.cuad.inicio||0,as:d.cuad.as.filter(a=>a&&a.n>0&&/^\d{4}-\d\d-\d\d$/.test(a.f)&&typeof a.txt==='string')};if(Array.isArray(d.agentes))S.agentes=d.agentes;if(d.cfg)S.cfg=d.cfg;if(!guardar()){S.regs=bk;return;}
     if(ob){try{localStorage.setItem(KOBRA,JSON.stringify(ob));}catch(e){}aplicarObra(ob);}toast('✔ Respaldo restaurado');ir('#/',true);render();}catch(e){aviso(e.message||'Archivo no válido.');}}
 // ---------- PIN ----------
 function pinData(){try{const x=JSON.parse(localStorage.getItem(KPIN));return x&&x.h?x:null;}catch(e){return null;}}
@@ -577,6 +581,142 @@ function copiarAs(){const a=$('#aF')?leerAs():window._as;const t=textoAsiento(a)
 function hojaCuaderno(){const rows=[[{v:'CUADERNO DE OBRA – BORRADOR DE ASIENTOS'+(TIT2?' – '+TIT2:''),s:4}],['Fecha de corte: '+fF(hoy())],[],['N°','FECHA','AUTOR','TIPO','CONTENIDO DEL ASIENTO','EN CUADERNO'].map(h=>({v:h,s:1}))];
   asOrden().forEach(a=>rows.push([{v:a.n,s:8},{v:fF(a.f),s:8},{v:a.autor==='S'?'Supervisor':'Residente',s:8},{v:tipoN(a.tipo),s:3},{v:textoAsiento(a).split('\n').slice(1).join('\n'),s:3},{v:a.pasado?'Sí':'No',s:8}]));
   return{name:'CUADERNO DE OBRA',frz:4,w:[6,11,11,16,110,10],rows};}
+
+// ========== v3.0: agentes, configuración, importación, Parte Diario ==========
+const GRUPOS=[['ORNE','Núcleo Ejecutor (ORNE)'],['EJEC','Ejecución / Supervisión'],['OBR','Personal obrero']];
+const ROLES=[
+ {k:'PRESIDENTE',n:'Presidente ORNE',g:'ORNE'},
+ {k:'SECRETARIA',n:'Secretaria ORNE',g:'ORNE'},
+ {k:'TESORERA',n:'Tesorera ORNE',g:'ORNE'},
+ {k:'FISCAL',n:'Fiscal ORNE',g:'ORNE'},
+ {k:'ADMIN',n:'Administrador(a) del NE',g:'ORNE'},
+ {k:'RESIDENTE',n:'Residente de obra',g:'EJEC',prof:1,coef:1},
+ {k:'SUPERVISOR',n:'Supervisor de Proyectos',g:'EJEC',prof:1},
+ {k:'MAESTRO',n:'Maestro de obra',g:'EJEC'},
+ {k:'ALMACENERO',n:'Almacenero',g:'EJEC'}];
+const rolMeta=k=>ROLES.find(r=>r.k===k)||{k,n:k,g:'EJEC'};
+const CATS=[['OPE','Operario'],['OFI','Oficial'],['PEON','Peón']];
+const catN=c=>({OPE:'Operario',OFI:'Oficial',PEON:'Peón'}[c]||c);
+function seedAgentes(){return [
+ {rol:'PRESIDENTE',nom:'Valentín Berdusco Quentasi',dni:'02295301'},
+ {rol:'SECRETARIA',nom:'Dominga Olga Callocondo Ramírez',dni:'01489680'},
+ {rol:'TESORERA',nom:'Sandra Quispe Catari',dni:'43877311'},
+ {rol:'FISCAL',nom:'Hugo Walter Yauri Huayna',dni:''},
+ {rol:'ADMIN',nom:'Hermelinda Torres Huacani',dni:'45895604'},
+ {rol:'RESIDENTE',nom:'Armando Quispe Pampamallco',dni:'01311299',cip:'56441'},
+ {rol:'SUPERVISOR',nom:'Raúl Alex Quispe Choquechambi',dni:'41186944',cip:'85844'},
+ {rol:'MAESTRO',nom:'',dni:''},
+ {rol:'ALMACENERO',nom:'',dni:''}
+].map(a=>Object.assign({id:uid(),cat:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:a.rol==='RESIDENTE'?1:0,obs:''},a));}
+function CA(){if(!Array.isArray(S.agentes)){S.agentes=seedAgentes();guardar();}return S.agentes;}
+function CFG(){if(!S.cfg)S.cfg={};const c=S.cfg;if(!c.conv)c.conv='22-2026-0008';if(!c.exp)c.exp='22-2026-0008';if(c.interv==null)c.interv=TIT2||TIT||'';if(!c.jornal)c.jornal={OPE:136.32,OFI:112.00,PEON:99.04};return c;}
+const desdeEf=a=>a.desde||INICIO;
+function agVig(rol,fecha,cat){const f=fecha||hoy();return CA().filter(a=>a.rol===rol&&(!cat||a.cat===cat)&&a.nom&&desdeEf(a)<=f&&(!a.hasta||a.hasta>=f)).sort((x,y)=>(y.orden-x.orden)||(desdeEf(y)<desdeEf(x)?-1:1))[0]||null;}
+function nomVig(rol,fecha){const a=agVig(rol,fecha);return a?a.nom:'';}
+function profTxt(a){const m=rolMeta(a.rol);return (m.prof&&a.cip?'CIP '+a.cip+' · ':'')+(a.dni?'DNI '+a.dni:'sin DNI');}
+// ---- lista de agentes
+function vAgentes(){let h='';
+ GRUPOS.forEach(([g,gt])=>{h+='<div class="cap">'+esc(gt)+'</div>';
+  if(g==='OBR'){const obr=CA().filter(a=>a.rol==='OBRERO');
+   h+=obr.length?obr.map(a=>filaAg(a)).join(''):'<div class="vacio" style="padding:14px">Sin obreros registrados.</div>';
+   h+='<div style="padding:10px"><button class="btn sec full" onclick="nuevoObrero()">＋ Agregar obrero</button></div>';
+  }else{ROLES.filter(r=>r.g===g).forEach(r=>{const v=agVig(r.k,hoy());const hist=CA().filter(a=>a.rol===r.k).length;
+    h+='<div class="pt" onclick="'+(v?'editarAg(\''+v.id+'\')':'nuevoAg(\''+r.k+'\')')+'"><span class="dot '+(v?'bg-ok':'bg-falta')+'"></span><span class="it" style="min-width:150px">'+esc(r.n)+'</span><span class="ds">'+(v?esc(v.nom)+' <small>('+esc(profTxt(v))+')</small>':'<i style="color:var(--mal)">sin asignar — toque para agregar</i>')+(hist>1?' <small style="color:var(--az)">· '+hist+'°</small>':'')+'</span></div>';});}});
+ app.innerHTML=bar('AGENTES DE LA OBRA','Núcleo, ejecución y obreros',true)+'<main><div class="aviso" style="background:#eef4fb;border-color:#9cc0e6;color:#123a63">Los nombres y firmas de todos los cuadros salen de aquí. Si cambia un agente, use <b>Registrar cambio</b> y el nuevo titular queda como 2°, 3°… con su fecha.</div><div class="card" style="padding:0;overflow:hidden">'+h+'</div></main>';}
+function filaAg(a){return '<div class="pt" onclick="editarAg(\''+a.id+'\')"><span class="dot bg-ok"></span><span class="it" style="min-width:90px">'+catN(a.cat)+'</span><span class="ds">'+esc(a.nom||'(sin nombre)')+' <small>('+esc(profTxt(a))+')</small></span></div>';}
+function nuevoAg(rol){const a={id:uid(),rol,cat:'',nom:'',dni:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:rol==='RESIDENTE'?1:0,obs:'',_nuevo:1};editAg(a);}
+function nuevoObrero(){editAg({id:uid(),rol:'OBRERO',cat:'OPE',nom:'',dni:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:0,obs:'',_nuevo:1});}
+function editarAg(id){const a=CA().find(x=>x.id===id);if(a)editAg(Object.assign({},a));}
+function editAg(a){window._ag=a;const m=rolMeta(a.rol),ob=a.rol==='OBRERO';
+ app.innerHTML=bar((a._nuevo?'NUEVO ':'')+'AGENTE',esc(ob?'Obrero':m.n),true)+'<main><div class="card">'+
+  '<label class="l">CARGO</label>'+(ob?'<select id="agCat" class="sel">'+CATS.map(c=>'<option value="'+c[0]+'"'+(c[0]===a.cat?' selected':'')+'>'+c[1]+'</option>').join('')+'</select>':'<div class="nom" style="margin:0 0 8px"><span class="it">'+esc(m.n)+'</span></div>')+
+  '<label class="l">NOMBRES Y APELLIDOS</label><input id="agNom" class="sel" value="'+esc(a.nom)+'" placeholder="Nombres y apellidos">'+
+  '<label class="l">DNI</label><input id="agDni" class="sel" inputmode="numeric" maxlength="8" value="'+esc(a.dni)+'" placeholder="8 dígitos">'+
+  (m.prof?'<label class="l">CIP</label><input id="agCip" class="sel" inputmode="numeric" value="'+esc(a.cip)+'" placeholder="N° de colegiatura">':'')+
+  '<label class="l">TELÉFONO (opcional)</label><input id="agTel" class="sel" inputmode="numeric" value="'+esc(a.tel)+'">'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="l">VIGENTE DESDE</label><input type="date" id="agDesde" class="sel" value="'+(a.desde||'')+'" min="'+INICIO+'" max="'+FIN+'"></div><div><label class="l">HASTA (si cesó)</label><input type="date" id="agHasta" class="sel" value="'+(a.hasta||'')+'" min="'+INICIO+'" max="'+FIN+'"></div></div>'+
+  '<div class="prev" style="text-align:left">Deje "desde" vacío = desde el inicio de obra. "Hasta" vacío = sigue vigente.</div>'+
+  ((a.rol==='RESIDENTE'||ob)?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="l">DÍAS POR ASISTIR/MES</label><input id="agDias" class="sel" inputmode="numeric" value="'+(a.dias||'')+'"></div>'+(a.rol==='RESIDENTE'?'<div><label class="l">COEF. PARTICIPACIÓN</label><input id="agCoef" class="sel" inputmode="decimal" value="'+(a.coef||'')+'"></div>':'<div></div>')+'</div>':'')+
+  '<label class="l">OBSERVACIÓN (opcional)</label><input id="agObs" class="sel" value="'+esc(a.obs)+'" placeholder="Ej.: motivo del cambio">'+
+  '<div id="agErr"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarAg()">GUARDAR</button></div>'+
+  (a._nuevo?'':'<div class="btns" style="margin-top:10px"><button class="btn full" onclick="cambioAg()">🔄 Registrar cambio (nuevo titular)</button>'+(a.rol==='OBRERO'?'<button class="btn mal full" onclick="borrarAg()">Borrar obrero</button>':'')+'</div>')+
+  '</div></main>';}
+function leerAg(){const a=window._ag,g=id=>{const el=$('#'+id);return el?el.value.trim():'';};
+ if(a.rol==='OBRERO')a.cat=g('agCat');a.nom=g('agNom');a.dni=g('agDni');if(rolMeta(a.rol).prof)a.cip=g('agCip');a.tel=g('agTel');a.desde=g('agDesde');a.hasta=g('agHasta');
+ if($('#agDias'))a.dias=parseInt(g('agDias'))||0;if($('#agCoef'))a.coef=parseFloat(g('agCoef'))||0;a.obs=g('agObs');return a;}
+function guardarAg(){const a=leerAg(),e=$('#agErr');e.innerHTML='';const er=m=>{e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
+ if(!a.nom)return er('Escriba los nombres y apellidos.');
+ if(a.dni&&!/^\d{8}$/.test(a.dni))return er('El DNI debe tener 8 dígitos.');
+ if(a.hasta&&a.desde&&a.hasta<a.desde)return er('La fecha "hasta" no puede ser anterior a "desde".');
+ const arr=CA(),bk=JSON.stringify(arr);const i=arr.findIndex(x=>x.id===a.id);const {_nuevo,...rec}=a;
+ if(i>=0)arr[i]=rec;else arr.push(rec);
+ if(!guardar()){S.agentes=JSON.parse(bk);return;}toast('✔ Agente guardado');ir('#/agentes',true);}
+async function cambioAg(){const a=window._ag,m=rolMeta(a.rol);
+ const f=await modalFecha('¿Desde qué fecha asume el nuevo '+(a.rol==='OBRERO'?catN(a.cat):m.n)+'?');if(!f)return;
+ const arr=CA(),bk=JSON.stringify(arr);const cur=arr.find(x=>x.id===a.id);if(cur&&!cur.hasta){const pf=new Date(Date.parse(f+'T12:00:00')-864e5);cur.hasta=pf.getFullYear()+'-'+pad(pf.getMonth()+1)+'-'+pad(pf.getDate());}
+ const ordenMax=Math.max(0,...arr.filter(x=>x.rol===a.rol&&x.cat===a.cat).map(x=>x.orden));
+ if(!guardar()){S.agentes=JSON.parse(bk);return;}
+ editAg({id:uid(),rol:a.rol,cat:a.cat,nom:'',dni:'',cip:'',tel:'',orden:ordenMax+1,desde:f,hasta:'',dias:a.dias||0,coef:a.rol==='RESIDENTE'?(a.coef||1):0,obs:'Reemplaza al anterior',_nuevo:1});}
+async function borrarAg(){const a=window._ag;const c=await modal('<h3>¿Borrar este obrero?</h3><p>'+esc(a.nom)+'</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar</button></div>');
+ if(c!=='si')return;const arr=CA(),bk=JSON.stringify(arr);S.agentes=arr.filter(x=>x.id!==a.id);if(!guardar()){S.agentes=JSON.parse(bk);return;}toast('Obrero borrado');ir('#/agentes',true);}
+function modalFecha(titulo){return new Promise(res=>{const bg=document.createElement('div');bg.className='modal-bg';bg.innerHTML='<div class="modal"><h3>'+esc(titulo)+'</h3><input type="date" id="mf" class="sel" value="'+hoy()+'" min="'+INICIO+'" max="'+FIN+'" style="width:100%"><div class="acc" style="grid-template-columns:1fr 1fr;margin-top:10px"><button class="btn sec" data-c="0">Cancelar</button><button class="btn ok" data-c="1">Aceptar</button></div></div>';document.body.appendChild(bg);const close=v=>{const val=bg.querySelector('#mf').value;bg.remove();res(v?val:'');};bg.addEventListener('click',e=>{if(e.target===bg)close(0);const b=e.target.closest('[data-c]');if(b)close(b.dataset.c==='1');});});}
+// ---- configuración
+function vConfig(){const c=CFG();app.innerHTML=bar('CONFIGURACIÓN','Jornales y datos del expediente',true)+'<main><div class="card">'+
+  '<div class="cap" style="margin:-4px -16px 10px">JORNAL DIARIO POR CATEGORÍA (S/)</div>'+
+  '<div class="prev" style="text-align:left;margin-bottom:8px">Valores del expediente (hora-hombre × 8 h). Edítelos solo si una orden superior lo dispone.</div>'+
+  CATS.map(([k,n])=>'<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="flex:1">'+n+'</span><input id="j_'+k+'" class="sel" style="flex:0 0 120px;text-align:right" inputmode="decimal" value="'+(c.jornal[k]||0).toFixed(2)+'"></div>').join('')+
+  '<div class="cap" style="margin:14px -16px 10px">CABECERA DE LOS FORMATOS</div>'+
+  '<label class="l">CONVENIO N°</label><input id="cfConv" class="sel" value="'+esc(c.conv)+'">'+
+  '<label class="l">EXPEDIENTE N°</label><input id="cfExp" class="sel" value="'+esc(c.exp)+'">'+
+  '<label class="l">INTERVENCIÓN</label><input id="cfInt" class="sel" value="'+esc(c.interv)+'">'+
+  '<div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarCfg()">GUARDAR</button></div></div></main>';}
+function guardarCfg(){const c=CFG();CATS.forEach(([k])=>{const v=parseFloat($('#j_'+k).value);if(v>=0)c.jornal[k]=Math.round(v*100)/100;});c.conv=$('#cfConv').value.trim();c.exp=$('#cfExp').value.trim();c.interv=$('#cfInt').value.trim();if(guardar()){toast('✔ Configuración guardada');ir('#/',true);}}
+// ---- importación (hub)
+function vImport(){const prox=(t,d)=>'<div class="pt" style="opacity:.6"><span class="dot bg-falta"></span><span class="it" style="min-width:130px">'+t+'</span><span class="ds">'+d+' <small>(próximamente)</small></span></div>';
+ app.innerHTML=bar('IMPORTAR / COMPLETAR DATOS','Un solo lugar para cargar información',true)+'<main>'+
+  '<div class="btns"><button class="btn full" onclick="ir(\'#/respaldo\')">📂 Archivo de obra y respaldo</button><button class="btn full" onclick="ir(\'#/config\')">⚙️ Jornales y cabecera del expediente</button><button class="btn full" onclick="ir(\'#/agentes\')">👷 Base de agentes</button></div>'+
+  '<div class="card" style="padding:0;overflow:hidden"><div class="cap">Se cargará en las siguientes versiones</div>'+
+   prox('Almacén','Importar ingresos de materiales (Excel)')+prox('Cronograma','Cronograma de avance valorizado (Formato 5)')+prox('Fotos','Panel fotográfico y escaneo de folios')+'</div>'+
+  '<div class="prev" style="text-align:left">Toda la información del aplicativo entra por aquí o por la base de agentes, para que no falte ningún dato en los formatos.</div></main>';}
+// ---- Parte Diario (esqueleto)
+let PF=null;
+function regsDia(f){return S.regs.filter(r=>r.f===f);}
+function vParte(f0){const f=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:fechaDefecto();PF=f;
+ const rs=regsDia(f);const asi=CU().as.find(a=>a.f===f);
+ const met=OBRAS.map(o=>{const sub=rs.filter(r=>r.o===o.k);if(!sub.length)return '';
+   return '<div style="font-weight:700;color:var(--az);margin:6px 0 2px">'+esc(o.n)+'</div>'+sub.map(r=>{const p=P[o.k+'|'+r.i];return '<div class="kv"><span>'+r.i+' '+esc(p?p.d:'')+'</span><b>'+n2(r.qc/100)+' '+(p?und(p.u):'')+'</b></div>';}).join('');}).join('');
+ const sec=(ic,t,st,body)=>'<div class="card"><div class="est" style="margin:0"><b>'+ic+' '+t+'</b><span class="tag '+(st.ok?'ok':'falta')+'">'+st.txt+'</span></div>'+(body||'')+'</div>';
+ app.innerHTML=bar('PARTE DIARIO','Registro del día',true)+'<main>'+
+  '<div class="card"><label class="l">FECHA DEL DÍA</label><div class="fecha"><input type="date" id="pfF" value="'+f+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="ir(\'#/parte/\'+this.value,true)" onclick="try{this.showPicker()}catch(e){}"><button class="hoy" onclick="ir(\'#/parte/\'+fechaDefecto(),true)">Hoy</button></div><div class="sub" style="margin-top:4px">'+diaSem(f)+' '+fF(f)+'</div></div>'+
+  sec('1️⃣','Metrados del día',{ok:rs.length>0,txt:rs.length?rs.length+' partida(s)':'pendiente'},
+    (met||'<div class="vacio" style="padding:10px">Sin metrados este día.</div>')+'<div class="btns" style="margin-top:8px"><button class="btn full" onclick="addMetParte()">＋ Agregar metrado</button></div>')+
+  sec('2️⃣','Asiento del cuaderno',{ok:!!asi,txt:asi?'N° '+pad(asi.n):'pendiente'},
+    '<div class="btns" style="margin-top:4px"><button class="btn full" style="background:var(--az)" onclick="ir(\''+(asi?'#/as/'+asi.id:'#/as/nuevo/'+f+'/diario')+'\')">'+(asi?'📖 Ver asiento del día':'📖 Generar asiento del día')+'</button></div>')+
+  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>3️⃣ Mano de obra / Asistencia</b><span class="tag falta">v3.2</span></div><div class="sub">Operarios, oficiales y peones del día (enlazado al tareo).</div></div>'+
+  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>4️⃣ Movimiento de almacén</b><span class="tag falta">v3.1</span></div><div class="sub">Ingresos y salidas del día (Formatos 9 y 10).</div></div>'+
+  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>5️⃣ Fotos y folios del cuaderno</b><span class="tag falta">v3.4</span></div><div class="sub">Panel fotográfico y escaneo de hojas.</div></div>'+
+  '<div class="prev" style="text-align:left">Esta pantalla reúne todo el registro del día. Se irá completando con cada versión.</div></main>';}
+async function addMetParte(){const f=PF;
+ const opt=OBRAS.map(o=>'<option value="'+o.k+'">'+esc(o.n)+'</option>').join('');
+ const dl=OBRAS.map(o=>DB[o.k].caps.map(c=>c.p.map(p=>'<option value="'+o.k+' · '+p.i+' '+esc(p.d)+'" data-o="'+o.k+'" data-i="'+p.i+'">').join('')).join('')).join('');
+ const r=await modal('<h3>Agregar metrado — '+fF(f)+'</h3><label class="l">OBRA</label><select id="mO" class="sel">'+opt+'</select><label class="l">PARTIDA</label><input id="mP" class="sel" list="mDL" placeholder="Escriba o elija la partida"><datalist id="mDL">'+dl+'</datalist><label class="l">METRADO</label><input id="mQ" class="sel" inputmode="decimal" placeholder="0.00"><div id="mErr"></div><div class="acc" style="grid-template-columns:1fr 1fr;margin-top:10px"><button class="btn sec" data-v="">Cancelar</button><button class="btn ok" id="mOk">Agregar</button></div>');
+ // el botón Agregar (#mOk) lo maneja el listener de abajo
+}
+// se maneja el submit del modal de metrado con un listener directo
+document.addEventListener('click',function(ev){const b=ev.target.closest&&ev.target.closest('#mOk');if(!b)return;
+ const bg=b.closest('.modal-bg');const oSel=bg.querySelector('#mO'),pIn=bg.querySelector('#mP'),qIn=bg.querySelector('#mQ'),err=bg.querySelector('#mErr');
+ const o=oSel.value;let i='';const m=pIn.value.trim();const mm=m.match(/·\s*([\dA-Za-z.]+)\s/)||m.match(/^([\dA-Za-z.]+)\b/);if(mm)i=mm[1];
+ const dlo=bg.querySelector('datalist#mDL');if(dlo){const opt=[...dlo.options].find(x=>x.value===m);if(opt){i=opt.dataset.i;}}
+ const p=P[o+'|'+i];const er=t=>{err.innerHTML='<div class="err-msg">⛔ '+t+'</div>';vibrar();};
+ if(!p)return er('Elija una partida válida de la lista.');
+ const pn=parseNum(qIn.value);if(pn.err)return er(pn.err);
+ const e=estP(p);if(e.done)return er('Esa partida ya está completada.');
+ if(pn.c>e.sal)return er('El metrado supera el saldo ('+n2(e.sal/100)+' '+und(p.u)+').');
+ S.regs.push({id:uid(),o,i,f:PF,qc:pn.c,obs:'',t:Date.now()});
+ if(!guardar()){S.regs.pop();return;}
+ bg._close?bg._close('ok'):bg.remove();toast('✔ Metrado agregado');render();
+});
+
 // ---------- inicio ----------
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 aplicarObra(cargarObra());
