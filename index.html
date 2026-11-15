@@ -128,6 +128,16 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 .thb img{width:100%;height:120px;object-fit:cover;display:block}
 .thb .cap{font-size:11px;padding:3px 5px;color:var(--sub)}
 .thb .xf{position:absolute;top:4px;right:4px;border:0;background:rgba(138,28,23,.85);color:#fff;border-radius:6px;width:26px;height:26px;font-size:15px}
+.lista{max-height:46vh;overflow-y:auto;border:1px solid var(--borde);border-radius:10px;margin-top:4px;background:#fff}
+.itm{padding:10px 12px;border-bottom:1px solid #eef1f4;cursor:pointer}
+.itm:active{background:#eef4fb}
+.itm .nm{font-weight:600;font-size:15px;color:#1a2b3c}
+.itm .sd{font-size:12px;color:var(--sub);margin-top:2px}
+.itm.ago{background:#fde8e8}
+.itm.ago .nm{color:#8a1c17}
+.card2{background:#f4f6f9;border-radius:10px;padding:10px;margin:8px 0}
+.card.ago,.card2.ago{background:#fde8e8}
+.c-mal{color:var(--mal)}
 .foot{color:var(--sub);font-size:12px;text-align:center;margin-top:16px}
 </style>
 </head>
@@ -137,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.5.2';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -1145,6 +1155,67 @@ function modalF19(corte){const mes=corte.slice(0,7);return new Promise(res=>{con
 async function expF19(){if(!PRES)return aviso('Cargue el presupuesto para el Formato 19.');const corte=repCorte();const r=await modalF19(corte);if(r.v!=='E'&&r.v!=='P')return;
  if(r.v==='P'){imprimir(docHTML('Formato 19','portrait',f19HTML(corte,r.G,r.H,r.n)));return;}
  try{pickGuardar(await libroXlsx([hojaF19(corte,r.G,r.H,r.n)]),'Formato19_Residente_'+corte.slice(0,7)+'.xlsx');}catch(e){aviso(e.message);}}
+
+
+// ===== v3.6: Almacén trabaja solo con lo ingresado; buscador vertical; agotados en rojo =====
+function movsItem(cod,ins,obra){return AL().mov.filter(m=>m.obra===obra&&(cod?m.cod===cod:((m.cod||'')===''&&m.ins===ins)));}
+function ingI(cod,ins,obra){return movsItem(cod,ins,obra).filter(m=>m.tipo==='ING').reduce((s,m)=>s+m.cant,0);}
+function salI(cod,ins,obra){return movsItem(cod,ins,obra).filter(m=>m.tipo==='SAL').reduce((s,m)=>s+m.cant,0);}
+function itemsIngresados(obra){const seen={},out=[];AL().mov.forEach(m=>{if(m.obra!==obra||m.tipo!=='ING')return;const k=(m.cod||('~'+m.ins.toLowerCase()));if(seen[k])return;seen[k]=1;out.push({cod:m.cod||'',ins:m.ins,u:m.u});});return out;}
+function vAlmacen(){const obra=almObra;const chip=(k,t)=>'<button class="chip'+(obra===k?' on':'')+'" onclick="almObra=\''+k+'\';vAlmacen()">'+t+'</button>';
+ const q=(almQ||'').toLowerCase().trim();
+ let list=itemsIngresados(obra).filter(x=>!q||x.ins.toLowerCase().includes(q)||(x.cod||'').toLowerCase().includes(q)).sort((a,b)=>a.ins.localeCompare(b.ins));
+ const cards=list.map(x=>{const ing=ingI(x.cod,x.ins,obra),sal=salI(x.cod,x.ins,obra),s=ing-sal,pre=x.cod?presuCod(x.cod,obra):0;const ago=s<=0;
+   return '<div class="card'+(ago?' ago':'')+'" style="padding:10px"><div class="est" style="margin:0"><b style="font-size:14px">'+esc(x.ins)+'</b>'+(ago?'<span class="tag" style="background:#f3a59f;color:#7a1511">AGOTADO</span>':'')+'</div><div class="sub">'+(x.cod||'sin código')+' · '+esc(x.u)+(pre?' · presup. '+n3(pre):'')+'</div><div class="kv"><span>Comprado (ingresado)</span><b>'+n3(ing)+'</b></div><div class="kv"><span>Con salida</span><b>'+n3(sal)+'</b></div><div class="kv"><span>Saldo</span><b class="'+(ago?'c-mal':'')+'">'+n3(s)+'</b></div></div>';}).join('');
+ app.innerHTML=bar('ALMACÉN',OBRAS.find(o=>o.k===obra).n,true)+'<main>'+
+  '<div class="chips">'+OBRAS.map(o=>chip(o.k,o.n)).join('')+'</div>'+
+  '<div class="btns"><button class="btn ok" onclick="formMov(\'ING\')">＋ Ingreso</button><button class="btn" onclick="formMov(\'SAL\')">－ Salida</button></div>'+
+  '<div class="btns"><button class="btn sec" onclick="ir(\'#/import\')">📥 Importar</button><button class="btn sec" onclick="ir(\'#/almmov\')">📋 Movimientos</button></div>'+
+  '<input class="sel" placeholder="🔎 Buscar insumo…" value="'+esc(almQ||'')+'" oninput="almQ=this.value;clearTimeout(window._aq);window._aq=setTimeout(vAlmacen,300)">'+
+  (cards||'<div class="vacio">Aún no ingresó ningún material a esta obra. Importe o registre un ingreso.</div>')+
+  '<div class="prev" style="text-align:left">El almacén muestra solo lo que ingresó. Los agotados quedan en rojo. El catálogo del expediente se usa solo como referencia.</div></main>';}
+// ----- formulario de movimiento con buscador vertical -----
+let MV=null;
+function formMov(tipo,f0){MV={tipo,obra:almObra,f:(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:fechaDefecto(),q:'',sel:null,cant:'',prov:'',guia:'',part:''};renderMov();}
+function renderMov(){const tipo=MV.tipo;
+ app.innerHTML=bar(tipo==='ING'?'REGISTRAR INGRESO':'REGISTRAR SALIDA',OBRAS.find(o=>o.k===MV.obra).n,true)+'<main><div class="card">'+
+  '<label class="l">OBRA</label><select class="sel" onchange="MV.obra=this.value;MV.sel=null;renderMov()">'+OBRAS.map(o=>'<option value="'+o.k+'"'+(o.k===MV.obra?' selected':'')+'>'+esc(o.n)+'</option>').join('')+'</select>'+
+  '<label class="l">FECHA</label><div class="fecha"><input type="date" id="mvF" value="'+MV.f+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="MV.f=this.value"></div>'+
+  (MV.sel?selBloque():buscador())+'</div></main>';
+ if(!MV.sel)setTimeout(()=>{const s=$('#mvQ');if(s){s.value=MV.q;}},20);}
+function buscador(){return '<label class="l">INSUMO</label><input id="mvQ" class="sel" placeholder="🔎 Buscar insumo…" value="'+esc(MV.q)+'" oninput="MV.q=this.value;pintarLista()"><div class="prev" style="text-align:left;margin:2px 0">'+(MV.tipo==='SAL'?'Solo aparecen los insumos que ingresaron. Los agotados, en rojo.':'Elija del catálogo o escriba uno nuevo abajo.')+'</div><div id="mvLista" class="lista">'+filasLista()+'</div>'+(MV.tipo==='ING'?'<div class="btns" style="margin-top:6px"><button class="btn sec full" onclick="nuevoInsLibre()">＋ Material que no está en la lista</button></div>':'');}
+function filasLista(){const tipo=MV.tipo,obra=MV.obra,q=MV.q.toLowerCase().trim();let arr;
+ if(tipo==='SAL')arr=itemsIngresados(obra);else arr=CI().map(x=>({cod:x.cod,ins:x.ins,u:x.u}));
+ arr=arr.filter(x=>!q||x.ins.toLowerCase().includes(q)||(x.cod||'').toLowerCase().includes(q)).sort((a,b)=>a.ins.localeCompare(b.ins));
+ window._lista=arr;
+ if(!arr.length)return '<div class="vacio" style="padding:12px">'+(tipo==='SAL'?'No hay insumos ingresados en esta obra.':'Sin coincidencias en el catálogo.')+'</div>';
+ return arr.slice(0,300).map((x,i)=>{const ing=ingI(x.cod,x.ins,obra),sal=salI(x.cod,x.ins,obra),s=ing-sal;const ago=tipo==='SAL'&&s<=0;
+   return '<div class="itm'+(ago?' ago':'')+'" onclick="elegirIdx('+i+')"><div class="nm">'+esc(x.ins)+'</div><div class="sd">'+(x.cod||'sin código')+' · '+esc(x.u)+(tipo==='SAL'?' · saldo '+n3(s)+(ago?' · AGOTADO':''):'')+'</div></div>';}).join('');}
+function pintarLista(){const el=$('#mvLista');if(el)el.innerHTML=filasLista();}
+function elegirIdx(i){MV.sel=window._lista[i];renderMov();}
+function nuevoInsLibre(){const nom=(MV.q||'').trim();MV.sel={cod:'',ins:nom||'(escriba el nombre)',u:'und',libre:1};renderMov();}
+function selBloque(){const o=MV.obra,x=MV.sel,tipo=MV.tipo;const ing=ingI(x.cod,x.ins,o),sal=salI(x.cod,x.ins,o),s=ing-sal;
+ let h='<div class="card2'+(tipo==='SAL'&&s<=0?' ago':'')+'">'+(x.libre?
+   '<label class="l">NOMBRE DEL MATERIAL</label><input id="mvNom" class="sel" value="'+esc(x.ins==='(escriba el nombre)'?'':x.ins)+'"><label class="l">UNIDAD</label><input id="mvU" class="sel" value="'+esc(x.u)+'">'
+   :'<b>'+esc(x.ins)+'</b><div class="sub">'+(x.cod||'sin código')+' · '+esc(x.u)+'</div>'+
+    '<div class="kv"><span>Comprado (ingresado)</span><b>'+n3(ing)+'</b></div><div class="kv"><span>Con salida</span><b>'+n3(sal)+'</b></div><div class="kv"><span>Saldo por dar salida</span><b class="'+(s<=0?'c-mal':'')+'">'+n3(s)+'</b></div>')+
+   '<button class="btn sec full" onclick="MV.sel=null;renderMov()">↩ Cambiar insumo</button></div>';
+ h+='<label class="l">CANTIDAD</label><input id="mvC" class="sel" inputmode="decimal" value="'+esc(MV.cant)+'" oninput="MV.cant=this.value">';
+ if(tipo==='ING')h+='<label class="l">PROVEEDOR</label><input id="mvP" class="sel" value="'+esc(MV.prov)+'" oninput="MV.prov=this.value"><label class="l">GUÍA / COMPROBANTE</label><input id="mvG" class="sel" value="'+esc(MV.guia)+'" oninput="MV.guia=this.value">';
+ else h+='<label class="l">PARTIDA DE DESTINO</label><input id="mvPart" class="sel" list="mvPL" value="'+esc(MV.part)+'" oninput="MV.part=this.value" placeholder="Elija la partida"><datalist id="mvPL">'+DB[o].caps.map(c=>c.p.map(pp=>'<option value="'+pp.i+' '+esc(pp.d)+'">').join('')).join('')+'</datalist>';
+ h+='<div id="mvErr"></div><div class="acc"><button class="btn sec" onclick="MV.sel=null;renderMov()">CANCELAR</button><button class="btn ok" onclick="guardarMov()">GUARDAR</button></div>';
+ return h;}
+function guardarMov(){const tipo=MV.tipo,o=MV.obra,f=$('#mvF')?$('#mvF').value:MV.f,e=$('#mvErr');if(e)e.innerHTML='';const er=m=>{if(e)e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
+ const c=parseFloat(String(MV.cant||($('#mvC')?$('#mvC').value:'')).replace(',','.'));
+ if(!MV.sel)return er('Elija el insumo.');
+ let cod=MV.sel.cod,ins=MV.sel.ins,u=MV.sel.u;
+ if(MV.sel.libre){ins=($('#mvNom')?$('#mvNom').value.trim():'');u=($('#mvU')?$('#mvU').value.trim():'und');if(!ins)return er('Escriba el nombre del material.');}
+ if(!/^\d{4}-\d\d-\d\d$/.test(f))return er('Elija la fecha.');
+ if(!(c>0))return er('Escriba una cantidad válida.');
+ const mv={id:uid(),tipo,f,cod,ins,u,prov:'',guia:'',part:'',obra:o,cant:Math.round(c*1000)/1000,t:Date.now()};
+ if(tipo==='ING'){mv.prov=($('#mvP')?$('#mvP').value.trim():'');mv.guia=($('#mvG')?$('#mvG').value.trim():'');}
+ else{mv.part=($('#mvPart')?$('#mvPart').value.trim():'');const s=ingI(cod,ins,o)-salI(cod,ins,o);if(c>s+1e-9&&!window._okExc){window._okExc=true;return er('La salida ('+n3(c)+') supera el saldo ('+n3(s)+'). Toque GUARDAR otra vez para forzarla.');}}
+ window._okExc=false;AL().mov.push(mv);if(!guardar()){AL().mov.pop();return;}toast('✔ '+(tipo==='ING'?'Ingreso':'Salida')+' registrado');ir('#/almacen',true);}
 
 // ---------- inicio ----------
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
