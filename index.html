@@ -147,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.1';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -409,9 +409,12 @@ function bloquear(){const pd=pinData();if(!pd||bloqueado)return false;bloqueado=
   pedirPin({t:'Avance de Obra',s:'Ingrese su PIN',olvido:olvidoPin},async(pin,ui)=>{if(Date.now()<espera){ui.err('Espere '+Math.ceil((espera-Date.now())/1000)+' segundos');ui.reset();return false;}
     if(await hashPin(pin,pd.salt)===pd.h){bloqueado=false;render();return true;}
     fallos++;if(fallos>=5){espera=Date.now()+30000;fallos=0;ui.err('5 intentos fallidos. Espere 30 segundos.');}else ui.err('PIN incorrecto ('+fallos+' de 5)');ui.reset();return false;});return true;}
-async function olvidoPin(ui){window._cb='';const c=await modal('<h3>¿Olvidó su PIN?</h3><p>Por seguridad el PIN no se puede recuperar. Puede <b>borrar todos los datos de este celular</b> (archivo de obra, registros y PIN) y luego restaurarlos desde su último respaldo.</p><label class="l">Para confirmar escriba BORRAR</label><input class="obs" oninput="window._cb=this.value" autocomplete="off"><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar datos</button></div>');
+async function olvidoPin(ui){const op=await modal('<h3>¿Olvidó su PIN?</h3><p>El PIN no se puede recuperar, pero puede <b>quitarlo sin perder nada</b>.</p><div class="btns"><button class="btn ok full" data-v="quitar">🔓 Quitar el PIN y conservar todos los datos</button><button class="btn mal full" data-v="borrar">Borrar todo y restaurar un respaldo</button><button class="btn sec full" data-v="">Cancelar</button></div>');
+  if(op==='quitar'){try{localStorage.removeItem(KPIN);}catch(e){}bloqueado=false;if(ui&&ui.close)ui.close();toast('✔ PIN quitado. Puede poner uno nuevo en Ajustes.');render();return;}
+  if(op!=='borrar')return;
+  window._cb='';const c=await modal('<h3>Borrar todos los datos</h3><p>Se <b>borrarán</b> el archivo de obra, los registros y el PIN de este celular. Luego restaure su respaldo.</p><label class="l">Para confirmar escriba BORRAR</label><input class="obs" oninput="window._cb=this.value" autocomplete="off"><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar datos</button></div>');
   if(c!=='si')return;if(String(window._cb).trim().toUpperCase()!=='BORRAR'){aviso('No se borró nada: debe escribir BORRAR.');return;}
-  try{[KEY,KOBRA,KPIN].forEach(k=>localStorage.removeItem(k));}catch(e){}S={regs:[],lastBackup:null};aplicarObra(null);bloqueado=false;ui.close();ir('#/respaldo',true);render();toast('Datos borrados. Restaure su respaldo.');}
+  try{[KEY,KOBRA,KPIN].forEach(k=>localStorage.removeItem(k));}catch(e){}S={regs:[],lastBackup:null};aplicarObra(null);bloqueado=false;if(ui&&ui.close)ui.close();ir('#/respaldo',true);render();toast('Datos borrados. Restaure su respaldo.');}
 function nuevoPin(titulo,alFin){let primero=null;pedirPin({t:titulo,s:'Escriba un PIN de 4 dígitos',cancel:true},async(pin,ui)=>{
     if(!primero){primero=pin;ui.reset();ui.sub('Repita el PIN para confirmar');return false;}
     if(pin!==primero){primero=null;ui.reset();ui.sub('Escriba un PIN de 4 dígitos');ui.err('No coinciden. Intente de nuevo.');return false;}
