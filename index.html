@@ -122,15 +122,22 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 .xb{border:0;background:#fce8e6;color:#8a1c17;border-radius:8px;font-size:18px}
 .btn.mini{min-height:40px;padding:8px;font-size:15px;margin:4px 0}
 .avt{width:100%;border-collapse:collapse;font-size:13px}.avt th{background:#e8eef5;color:var(--az);padding:5px;text-align:center}.avt td{border-bottom:1px solid var(--borde);padding:5px}.avt td+td{text-align:right;white-space:nowrap}
+
+.galeria{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.thb{position:relative;border:1px solid var(--borde);border-radius:8px;overflow:hidden;background:#eee}
+.thb img{width:100%;height:120px;object-fit:cover;display:block}
+.thb .cap{font-size:11px;padding:3px 5px;color:var(--sub)}
+.thb .xf{position:absolute;top:4px;right:4px;border:0;background:rgba(138,28,23,.85);color:#fff;border-radius:6px;width:26px;height:26px;font-size:15px}
 .foot{color:var(--sub);font-size:12px;text-align:center;margin-top:16px}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<input id="fotoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="fotoElegida(this.files[0]);this.value=''">
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.1';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.5.1';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -190,6 +197,11 @@ function render(){if(bloqueado)return;document.querySelectorAll('.modal-bg').for
   if(h[0]==='config')return vConfig();
   if(h[0]==='import')return vImport();
   if(h[0]==='rep')return vRep(h[1]);
+  if(h[0]==='almacen')return vAlmacen();
+  if(h[0]==='almmov')return vAlmMov();
+  if(h[0]==='asis')return vAsis(h[1]);
+  if(h[0]==='fotos')return vFotos();
+  if(h[0]==='folios')return vFolios(h[1]);
   vInicio();}
 // ---------- Pantalla 1: inicio ----------
 let instalarEvt=null;
@@ -209,7 +221,7 @@ function vInicio(){const pl=plazo();let tp=0,ta=0,spct=0;
     :'<div class="card total"><div class="kv"><span>AVANCE GENERAL (metrados)</span><b>'+n2(tpct,2)+' %</b></div></div>';
   app.innerHTML=bar('AVANCE DE OBRA'+(TIT?' – '+esc(TIT):''),'Hoy: '+fF(hoy()),false)+'<main>'+
    '<div class="plazo">'+(pl.dia===0?'Inicio de obra: '+fF(INICIO):'Plazo: <b>día '+pl.dia+' de '+PLAZO+'</b> · '+n2(pl.pct,2)+' % del tiempo · faltan '+pl.faltan+' días')+'</div>'+rec+nopres+cards+total+
-   '<div class="btns"><button class="btn full ok" onclick="ir(\'#/parte/\'+fechaDefecto())">📋 Parte Diario</button><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="ir(\'#/rep\')">📊 Reportes / Exportar</button><button class="btn" onclick="ir(\'#/agentes\')">👷 Agentes</button><button class="btn" onclick="ir(\'#/import\')">🗂️ Datos</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
+   '<div class="btns"><button class="btn full ok" onclick="ir(\'#/parte/\'+fechaDefecto())">📋 Parte Diario</button><button class="btn full" style="background:var(--az)" onclick="ir(\'#/cuad\')">📖 Cuaderno de Obra'+((n=>n?' · '+n+' por pasar':'')(CU().as.filter(a=>!a.pasado).length))+'</button><button class="btn" onclick="ir(\'#/dia\')">📝 Exportar por día</button><button class="btn" onclick="ir(\'#/rep\')">📊 Reportes / Exportar</button><button class="btn" onclick="ir(\'#/agentes\')">👷 Agentes</button><button class="btn" onclick="ir(\'#/almacen\')">📦 Almacén</button><button class="btn" onclick="ir(\'#/fotos\')">📷 Fotos</button><button class="btn" onclick="ir(\'#/import\')">🗂️ Datos</button><button class="btn sec full" onclick="ir(\'#/respaldo\')">⚙️ Ajustes y respaldo</button>'+
    (instalarEvt?'<button class="btn ok full" onclick="instalar()">📲 Instalar aplicación</button>':'')+'</div>'+
    '<div class="foot">Avance de Obra · v'+VERSION+' · funciona sin internet</div></main>';}
 function instalar(){if(!instalarEvt)return;instalarEvt.prompt();instalarEvt.userChoice.finally(()=>{instalarEvt=null;render();});}
@@ -363,14 +375,14 @@ async function cargarObraArchivo(file){if(!file)return;try{const x=await leerJso
     if(cf.falt.length)throw new Error('No se cargó: hay registros en partidas que no existen en el archivo nuevo ('+cf.falt.slice(0,5).join(', ')+'). Revise el archivo.');
     if(OB||cf.exc.length){const c=await modal('<h3>'+(OB?'¿Reemplazar el archivo de la obra?':'Cargar archivo')+'</h3><p>'+esc(x.subtitulo||x.titulo||'')+'<br>Sus '+S.regs.length+' registros se conservan.</p>'+(cf.exc.length?'<div class="err-msg">⚠ En '+cf.exc.length+' partida(s) lo registrado supera el nuevo metrado: '+esc(cf.exc.slice(0,5).join(', '))+'. Deberá corregir esos registros.</div>':'')+'<div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn ok" data-v="si">Cargar</button></div>');if(c!=='si')return;}
     x.cargado=hoy();localStorage.setItem(KOBRA,JSON.stringify(x));aplicarObra(x);toast('✔ Archivo de obra cargado');ir('#/',true);render();}catch(e){aviso(e.message);}}
-function hacerResp(modo){const d={app:'avobra',v:4,fecha:new Date().toISOString(),regs:S.regs,cuad:S.cuad||null,agentes:S.agentes||null,cfg:S.cfg||null,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
+function hacerResp(modo){const d={app:'avobra',v:5,fecha:new Date().toISOString(),regs:S.regs,cuad:S.cuad||null,agentes:S.agentes||null,cfg:S.cfg||null,insumos:S.insumos||null,alm:S.alm||null,asis:S.asis||null,fotos:S.fotos||null,obra:OB};const blob=new Blob([JSON.stringify(d)],{type:'application/json'});const nombre='Respaldo_Avance_Obra_'+hoy()+'.json';
   if(modo==='sh')compartirArchivo(blob,nombre);else descargar(blob,nombre);S.lastBackup=Date.now();guardar();setTimeout(render,300);}
 async function restaurar(file){if(!file)return;try{const d=await leerJson(file);if(d.app!=='avobra'||!Array.isArray(d.regs))throw new Error('El archivo no es un respaldo de esta aplicación.');
     let ob=null;try{if(d.obra&&obraValida(d.obra))ob=d.obra;}catch(e){}const base=ob||OB;if(!base)throw new Error('Este respaldo no trae el archivo de la obra. Cargue primero el archivo de la obra.');
     const ix={};base.obras.forEach(o=>o.caps.forEach(c=>c.p.forEach(q=>{ix[o.k+'|'+q.i]=1;})));
     const ok=d.regs.filter(r=>r&&ix[r.o+'|'+r.i]&&/^\d{4}-\d\d-\d\d$/.test(r.f)&&Number.isInteger(r.qc)&&r.qc>0);
     const c=await modal('<h3>¿Restaurar respaldo?</h3><p>El respaldo tiene <b>'+ok.length+'</b> registros (del '+fF((d.fecha||'').slice(0,10))+')'+(ob?' y el archivo de la obra':'')+'.<br>'+(d.cuad&&d.cuad.as&&d.cuad.as.length?'Incluye '+d.cuad.as.length+' asiento(s) del cuaderno. ':'')+'Se <b>reemplazarán</b> los '+S.regs.length+' registros actuales.</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Restaurar</button></div>');
-    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(d.cuad&&Array.isArray(d.cuad.as))S.cuad={inicio:+d.cuad.inicio||0,as:d.cuad.as.filter(a=>a&&a.n>0&&/^\d{4}-\d\d-\d\d$/.test(a.f)&&typeof a.txt==='string')};if(Array.isArray(d.agentes))S.agentes=d.agentes;if(d.cfg)S.cfg=d.cfg;if(!guardar()){S.regs=bk;return;}
+    if(c!=='si')return;const bk=S.regs;S.lastBackup=Date.parse(d.fecha)||Date.now();S.regs=ok.map(r=>({id:r.id||uid(),o:r.o,i:r.i,f:r.f,qc:r.qc,obs:String(r.obs||'').slice(0,80),t:r.t||Date.now()}));if(d.cuad&&Array.isArray(d.cuad.as))S.cuad={inicio:+d.cuad.inicio||0,as:d.cuad.as.filter(a=>a&&a.n>0&&/^\d{4}-\d\d-\d\d$/.test(a.f)&&typeof a.txt==='string')};if(Array.isArray(d.agentes))S.agentes=d.agentes;if(d.cfg)S.cfg=d.cfg;if(Array.isArray(d.insumos))S.insumos=d.insumos;if(d.alm&&Array.isArray(d.alm.mov))S.alm=d.alm;if(d.asis&&typeof d.asis==='object')S.asis=d.asis;if(Array.isArray(d.fotos))S.fotos=d.fotos;if(!guardar()){S.regs=bk;return;}
     if(ob){try{localStorage.setItem(KOBRA,JSON.stringify(ob));}catch(e){}aplicarObra(ob);}toast('✔ Respaldo restaurado');ir('#/',true);render();}catch(e){aviso(e.message||'Archivo no válido.');}}
 // ---------- PIN ----------
 function pinData(){try{const x=JSON.parse(localStorage.getItem(KPIN));return x&&x.h?x:null;}catch(e){return null;}}
@@ -504,7 +516,7 @@ function vAsiento(id,f0,t0){const c=CU();let a=c.as.find(x=>x.id===id);const nue
     if(t!=='diario')a.txt=plantilla(t,f,a);}
   window._as=a;window._asNuevo=nuevo;window._okBlancos=false;
   if(a.pasado){app.innerHTML=bar('ASIENTO N° '+pad(a.n),'Ya pasado al cuaderno físico',true)+'<main><div class="card"><div class="pre" style="max-height:none;font-family:inherit;font-size:15px">'+esc(textoAsiento(a))+'</div>'+
-    '<div class="btns" style="margin-top:12px"><button class="btn wa" onclick="enviarTexto(textoAsiento(window._as,true))">🟢 WhatsApp</button><button class="btn sec" onclick="copiarAs()">Copiar</button><button class="btn sec full" onclick="desbloquearAs()">🔓 Desbloquear para corregir</button></div></div></main>';return;}
+    '<div class="btns" style="margin-top:12px"><button class="btn wa" onclick="enviarTexto(textoAsiento(window._as,true))">🟢 WhatsApp</button><button class="btn sec" onclick="asientoPDF(window._as)">📄 PDF</button><button class="btn sec" onclick="ir(\'#/folios/'+a.id+'\')">📷 Folios</button><button class="btn sec full" onclick="desbloquearAs()">🔓 Desbloquear</button></div></div></main>';return;}
   const op=(arr,v)=>arr.map(x=>'<option value="'+esc(x[0])+'"'+(x[0]===v?' selected':'')+'>'+esc(x[1])+'</option>').join('');
   const tipos=TIPOS.some(x=>x[0]===a.tipo)?TIPOS:TIPOS.concat([[a.tipo,tipoN(a.tipo)]]);
   const cons=asOrden().filter(x=>x.tipo==='consulta'),dia=a.tipo==='diario',mo=a.mo||{},al=a.alm||{sal:[],ing:[]};
@@ -534,14 +546,14 @@ function vAsiento(id,f0,t0){const c=CU();let a=c.as.find(x=>x.id===id);const nue
     '<label class="l">TEXTO DEL ASIENTO</label><textarea id="aTxt" class="txa">'+esc(a.txt||'')+'</textarea>'+
     '<div class="btns" style="margin:8px 0 0"><button class="btn sec full" onclick="usarPlantilla()">📋 Plantilla</button></div>'+
    '</div>'+
-   '<div id="err"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarAs()">GUARDAR</button></div>'+
-   '<div class="btns" style="margin-top:10px"><button class="btn wa" onclick="enviarTexto(textoAsiento(leerAs(),true))">🟢 WhatsApp</button><button class="btn sec" onclick="copiarAs()">Copiar</button>'+
+   '<label class="l">N° DE FOLIO (cuaderno físico)</label><input id="aFolio" class="sel" inputmode="numeric" value="'+(a.folio||'')+'">'+(nuevo?'':'<div class="btns" style="margin:4px 0"><button class="btn sec full" onclick="ir(\'#/folios/'+a.id+'\')">📷 Escaneo de folios ('+fotosDe(a.id).length+')</button></div>')+'<div id="err"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarAs()">GUARDAR</button></div>'+
+   '<div class="btns" style="margin-top:10px"><button class="btn wa" onclick="enviarTexto(textoAsiento(leerAs(),true))">🟢 WhatsApp</button><button class="btn sec" onclick="copiarAs()">Copiar</button><button class="btn sec" onclick="asientoPDF(leerAs())">📄 PDF</button>'+
    (nuevo?'':'<button class="btn full" onclick="pasarAs()">✍️ Ya lo pasé al cuaderno físico</button>'+(a.n===Math.max(...CU().as.map(x=>x.n))?'<button class="btn mal full" onclick="borrarAs()">Borrar este asiento</button>':''))+'</div>'+
    '</div><div class="prev" style="text-align:left">La aplicación es un borrador ordenado: el asiento oficial es el que se escribe y firma en el cuaderno físico legalizado.</div></main>';}
 function numIn(id){const el=$('#'+id);if(!el)return 0;const v=parseInt((el.value||'').trim(),10);return v>0?v:0;}
 function leerAlm(id){return [...document.querySelectorAll('#'+id+' .almf')].map(r=>{const m=abrev(r.querySelector('.am').value,true),u=abrev(r.querySelector('.au').value,true).toLowerCase(),q={};
   r.querySelectorAll('.aq').forEach(i=>{const v=parseFloat(String(i.value).trim().replace(',','.'));if(v>0)q[i.dataset.k]=Math.round(v*100)/100;});return{m,u,q};}).filter(x=>x.m&&Object.keys(x.q).length);}
-function leerAs(){const a=Object.assign({},window._as);a.f=$('#aF').value;a.autor=$('#aAut').value;a.tipo=$('#aTipo').value;
+function leerAs(){const a=Object.assign({},window._as);if($('#aFolio'))a.folio=$('#aFolio').value.trim();a.f=$('#aF').value;a.autor=$('#aAut').value;a.tipo=$('#aTipo').value;
   if(a.tipo==='diario'){a.act=$('#aAct').value.trim();a.av=filasAvance(a.f);a.mo={mae:numIn('mae')};OBRAS.forEach(o=>{const p={op:numIn('po_'+o.k),of:numIn('pf_'+o.k),pe:numIn('pp_'+o.k)};if(p.op||p.of||p.pe)a.mo[o.k]=p;});
     a.alm={sal:leerAlm('salBox'),ing:leerAlm('ingBox')};a.eq={};a.oc={};OBRAS.forEach(o=>{const e=$('#eq_'+o.k).value.trim(),c=$('#oc_'+o.k).value.trim();if(e)a.eq[o.k]=e;if(c)a.oc[o.k]=c;});
     a.herr=$('#aHerr').value.trim();a.obra='AM';a.ref='';a.txt=textoDiario(a);a.pers={};a.clima='';}
@@ -610,7 +622,7 @@ function seedAgentes(){return [
  {rol:'ALMACENERO',nom:'',dni:''}
 ].map(a=>Object.assign({id:uid(),cat:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:a.rol==='RESIDENTE'?1:0,obs:''},a));}
 function CA(){if(!Array.isArray(S.agentes)){S.agentes=seedAgentes();guardar();}return S.agentes;}
-function CFG(){if(!S.cfg)S.cfg={};const c=S.cfg;if(!c.conv)c.conv='22-2026-0008';if(!c.exp)c.exp='22-2026-0008';if(c.interv==null)c.interv=TIT2||TIT||'';if(!c.jornal)c.jornal={OPE:136.32,OFI:112.00,PEON:99.04};if(!c.feriados)c.feriados=['2026-12-08','2026-12-09','2026-12-25','2027-01-01'];return c;}
+function CFG(){if(!S.cfg)S.cfg={};const c=S.cfg;if(!c.conv)c.conv='22-2026-0008';if(!c.exp)c.exp='22-2026-0008';if(c.interv==null)c.interv=TIT2||TIT||'';if(!c.jornal)c.jornal={OPE:136.32,OFI:112.00,PEON:99.04};if(!c.feriados)c.feriados=['2026-12-08','2026-12-09','2026-12-25','2027-01-01'];if(c.gastoRes==null)c.gastoRes=23700;if(c.gastoSup==null)c.gastoSup=17000;return c;}
 const desdeEf=a=>a.desde||INICIO;
 function agVig(rol,fecha,cat){const f=fecha||hoy();return CA().filter(a=>a.rol===rol&&(!cat||a.cat===cat)&&a.nom&&desdeEf(a)<=f&&(!a.hasta||a.hasta>=f)).sort((x,y)=>(y.orden-x.orden)||(desdeEf(y)<desdeEf(x)?-1:1))[0]||null;}
 function nomVig(rol,fecha){const a=agVig(rol,fecha);return a?a.nom:'';}
@@ -626,7 +638,7 @@ function vAgentes(){let h='';
  app.innerHTML=bar('AGENTES DE LA OBRA','Núcleo, ejecución y obreros',true)+'<main><div class="aviso" style="background:#eef4fb;border-color:#9cc0e6;color:#123a63">Los nombres y firmas de todos los cuadros salen de aquí. Si cambia un agente, use <b>Registrar cambio</b> y el nuevo titular queda como 2°, 3°… con su fecha.</div><div class="card" style="padding:0;overflow:hidden">'+h+'</div></main>';}
 function filaAg(a){return '<div class="pt" onclick="editarAg(\''+a.id+'\')"><span class="dot bg-ok"></span><span class="it" style="min-width:90px">'+catN(a.cat)+'</span><span class="ds">'+esc(a.nom||'(sin nombre)')+' <small>('+esc(profTxt(a))+')</small></span></div>';}
 function nuevoAg(rol){const a={id:uid(),rol,cat:'',nom:'',dni:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:rol==='RESIDENTE'?1:0,obs:'',_nuevo:1};editAg(a);}
-function nuevoObrero(){editAg({id:uid(),rol:'OBRERO',cat:'OPE',nom:'',dni:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:0,obs:'',_nuevo:1});}
+function nuevoObrero(){editAg({id:uid(),rol:'OBRERO',cat:'OPE',gen:'M',nom:'',dni:'',cip:'',tel:'',orden:1,desde:'',hasta:'',dias:0,coef:0,obs:'',_nuevo:1});}
 function editarAg(id){const a=CA().find(x=>x.id===id);if(a)editAg(Object.assign({},a));}
 function editAg(a){window._ag=a;const m=rolMeta(a.rol),ob=a.rol==='OBRERO';
  app.innerHTML=bar((a._nuevo?'NUEVO ':'')+'AGENTE',esc(ob?'Obrero':m.n),true)+'<main><div class="card">'+
@@ -634,6 +646,7 @@ function editAg(a){window._ag=a;const m=rolMeta(a.rol),ob=a.rol==='OBRERO';
   '<label class="l">NOMBRES Y APELLIDOS</label><input id="agNom" class="sel" value="'+esc(a.nom)+'" placeholder="Nombres y apellidos">'+
   '<label class="l">DNI</label><input id="agDni" class="sel" inputmode="numeric" maxlength="8" value="'+esc(a.dni)+'" placeholder="8 dígitos">'+
   (m.prof?'<label class="l">CIP</label><input id="agCip" class="sel" inputmode="numeric" value="'+esc(a.cip)+'" placeholder="N° de colegiatura">':'')+
+  (ob?'<label class="l">GÉNERO</label><select id="agGen" class="sel"><option value="M"'+(a.gen!=='F'?' selected':'')+'>Masculino</option><option value="F"'+(a.gen==='F'?' selected':'')+'>Femenino</option></select>':'')+
   '<label class="l">TELÉFONO (opcional)</label><input id="agTel" class="sel" inputmode="numeric" value="'+esc(a.tel)+'">'+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="l">VIGENTE DESDE</label><input type="date" id="agDesde" class="sel" value="'+(a.desde||'')+'" min="'+INICIO+'" max="'+FIN+'"></div><div><label class="l">HASTA (si cesó)</label><input type="date" id="agHasta" class="sel" value="'+(a.hasta||'')+'" min="'+INICIO+'" max="'+FIN+'"></div></div>'+
   '<div class="prev" style="text-align:left">Deje "desde" vacío = desde el inicio de obra. "Hasta" vacío = sigue vigente.</div>'+
@@ -644,7 +657,7 @@ function editAg(a){window._ag=a;const m=rolMeta(a.rol),ob=a.rol==='OBRERO';
   '</div></main>';}
 function leerAg(){const a=window._ag,g=id=>{const el=$('#'+id);return el?el.value.trim():'';};
  if(a.rol==='OBRERO')a.cat=g('agCat');a.nom=g('agNom');a.dni=g('agDni');if(rolMeta(a.rol).prof)a.cip=g('agCip');a.tel=g('agTel');a.desde=g('agDesde');a.hasta=g('agHasta');
- if($('#agDias'))a.dias=parseInt(g('agDias'))||0;if($('#agCoef'))a.coef=parseFloat(g('agCoef'))||0;a.obs=g('agObs');return a;}
+ if($('#agGen'))a.gen=$('#agGen').value;if($('#agDias'))a.dias=parseInt(g('agDias'))||0;if($('#agCoef'))a.coef=parseFloat(g('agCoef'))||0;a.obs=g('agObs');return a;}
 function guardarAg(){const a=leerAg(),e=$('#agErr');e.innerHTML='';const er=m=>{e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
  if(!a.nom)return er('Escriba los nombres y apellidos.');
  if(a.dni&&!/^\d{8}$/.test(a.dni))return er('El DNI debe tener 8 dígitos.');
@@ -669,15 +682,15 @@ function vConfig(){const c=CFG();app.innerHTML=bar('CONFIGURACIÓN','Jornales y 
   '<div class="cap" style="margin:14px -16px 10px">CABECERA DE LOS FORMATOS</div>'+
   '<label class="l">CONVENIO N°</label><input id="cfConv" class="sel" value="'+esc(c.conv)+'">'+
   '<label class="l">EXPEDIENTE N°</label><input id="cfExp" class="sel" value="'+esc(c.exp)+'">'+
-  '<label class="l">INTERVENCIÓN</label><input id="cfInt" class="sel" value="'+esc(c.interv)+'">'+
+  '<label class="l">INTERVENCIÓN</label><input id="cfInt" class="sel" value="'+esc(c.interv)+'">'+'<div class="cap" style="margin:14px -16px 10px">GASTOS AUTORIZADOS (Formato 19)</div><label class="l">PRESUPUESTO GASTOS RESIDENTE (85%) S/</label><input id="cfGR" class="sel" inputmode="decimal" value="'+(c.gastoRes||0).toFixed(2)+'"><label class="l">PRESUPUESTO GASTOS SUPERVISOR S/</label><input id="cfGS" class="sel" inputmode="decimal" value="'+(c.gastoSup||0).toFixed(2)+'">'+
   '<div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarCfg()">GUARDAR</button></div></div></main>';}
-function guardarCfg(){const c=CFG();CATS.forEach(([k])=>{const v=parseFloat($('#j_'+k).value);if(v>=0)c.jornal[k]=Math.round(v*100)/100;});c.conv=$('#cfConv').value.trim();c.exp=$('#cfExp').value.trim();c.interv=$('#cfInt').value.trim();if(guardar()){toast('✔ Configuración guardada');ir('#/',true);}}
+function guardarCfg(){const c=CFG();CATS.forEach(([k])=>{const v=parseFloat($('#j_'+k).value);if(v>=0)c.jornal[k]=Math.round(v*100)/100;});c.conv=$('#cfConv').value.trim();c.exp=$('#cfExp').value.trim();c.interv=$('#cfInt').value.trim();c.gastoRes=parseFloat($('#cfGR').value)||0;c.gastoSup=parseFloat($('#cfGS').value)||0;if(guardar()){toast('✔ Configuración guardada');ir('#/',true);}}
 // ---- importación (hub)
 function vImport(){const prox=(t,d)=>'<div class="pt" style="opacity:.6"><span class="dot bg-falta"></span><span class="it" style="min-width:130px">'+t+'</span><span class="ds">'+d+' <small>(próximamente)</small></span></div>';
  app.innerHTML=bar('IMPORTAR / COMPLETAR DATOS','Un solo lugar para cargar información',true)+'<main>'+
-  '<div class="btns"><button class="btn full" onclick="ir(\'#/respaldo\')">📂 Archivo de obra y respaldo</button><button class="btn full" onclick="ir(\'#/config\')">⚙️ Jornales y cabecera del expediente</button><button class="btn full" onclick="ir(\'#/agentes\')">👷 Base de agentes</button></div>'+
+  '<input type="file" id="impF" accept=".xlsx,.json" style="display:none" onchange="importArchivo(this.files[0]);this.value=&apos;&apos;">'+'<div class="btns"><button class="btn full ok" onclick="document.getElementById(&apos;impF&apos;).click()">📥 Importar archivo (catálogo o ingresos)</button><button class="btn full" onclick="ir(\'#/almacen\')">📦 Almacén'+(CI().length?' · '+CI().length+' insumos':' (sin catálogo)')+'</button><button class="btn full" onclick="ir(\'#/respaldo\')">📂 Archivo de obra y respaldo</button><button class="btn full" onclick="ir(\'#/config\')">⚙️ Jornales y cabecera</button><button class="btn full" onclick="ir(\'#/agentes\')">👷 Base de agentes</button></div>'+
   '<div class="card" style="padding:0;overflow:hidden"><div class="cap">Se cargará en las siguientes versiones</div>'+
-   prox('Almacén','Importar ingresos de materiales (Excel)')+prox('Cronograma','Cronograma de avance valorizado (Formato 5)')+prox('Fotos','Panel fotográfico y escaneo de folios')+'</div>'+
+   prox('Cronograma','Cronograma de avance valorizado (Formato 5)')+prox('Fotos','Panel fotográfico y escaneo de folios')+'</div>'+
   '<div class="prev" style="text-align:left">Toda la información del aplicativo entra por aquí o por la base de agentes, para que no falte ningún dato en los formatos.</div></main>';}
 // ---- Parte Diario (esqueleto)
 let PF=null;
@@ -693,8 +706,8 @@ function vParte(f0){const f=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:fechaDefecto()
     (met||'<div class="vacio" style="padding:10px">Sin metrados este día.</div>')+'<div class="btns" style="margin-top:8px"><button class="btn full" onclick="addMetParte()">＋ Agregar metrado</button></div>')+
   sec('2️⃣','Asiento del cuaderno',{ok:!!asi,txt:asi?'N° '+pad(asi.n):'pendiente'},
     '<div class="btns" style="margin-top:4px"><button class="btn full" style="background:var(--az)" onclick="ir(\''+(asi?'#/as/'+asi.id:'#/as/nuevo/'+f+'/diario')+'\')">'+(asi?'📖 Ver asiento del día':'📖 Generar asiento del día')+'</button></div>')+
-  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>3️⃣ Mano de obra / Asistencia</b><span class="tag falta">v3.2</span></div><div class="sub">Operarios, oficiales y peones del día (enlazado al tareo).</div></div>'+
-  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>4️⃣ Movimiento de almacén</b><span class="tag falta">v3.1</span></div><div class="sub">Ingresos y salidas del día (Formatos 9 y 10).</div></div>'+
+  sec('3️⃣','Mano de obra / Asistencia',{ok:asisDe(f).length>0,txt:asisDe(f).length?asisDe(f).length+' presentes':'pendiente'},'<div class="btns" style="margin-top:4px"><button class="btn full" onclick="ir(&apos;#/asis/'+f+'&apos;)">👷 Marcar asistencia del día</button></div>')+
+  sec('4️⃣','Movimiento de almacén',{ok:movDia(f)>0,txt:movDia(f)?movDia(f)+' mov.':'pendiente'},'<div class="btns" style="margin-top:4px"><button class="btn ok" onclick="almObra=&apos;AZ&apos;;formMov(&apos;ING&apos;,&apos;'+f+'&apos;)">＋ Ingreso</button><button class="btn" onclick="almObra=&apos;AZ&apos;;formMov(&apos;SAL&apos;,&apos;'+f+'&apos;)">－ Salida</button><button class="btn sec full" onclick="ir(&apos;#/almacen&apos;)">Ver almacén</button></div>')+
   '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>5️⃣ Fotos y folios del cuaderno</b><span class="tag falta">v3.4</span></div><div class="sub">Panel fotográfico y escaneo de hojas.</div></div>'+
   '<div class="prev" style="text-align:left">Esta pantalla reúne todo el registro del día. Se irá completando con cada versión.</div></main>';}
 async function addMetParte(){const f=PF;
@@ -793,7 +806,7 @@ function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));
  return '<h1>RESUMEN DE AVANCE – '+esc(TIT||'PAQUETE')+'</h1><div class="sub">Al '+fF(corte)+' · Convenio '+esc(CFG().conv)+'</div>'+
   '<table class="g"><thead><tr><th class="l">COMPONENTE</th><th>PRESUPUESTO</th><th>VALORIZADO</th><th>SALDO</th><th>% AVANCE</th></tr></thead><tbody>'+rows+'</tbody></table>'+
   '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %</div>';}
-function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
+function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',SECRETARIO:'SECRETARIA',FISCAL:'FISCAL',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
  return '<div class="fir">'+roles.map(r=>{const a=agVig(n[r]||r,corte);return '<div><div class="ln"></div><b>'+esc(r)+'</b><div>'+esc(a?a.nom:'')+'</div><div>'+(a&&a.dni?'DNI '+a.dni:'')+'</div></div>';}).join('')+'</div>';}
 function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}.hl{background:#f8cbad}.ac{background:#c6efce}table.g.mat th{font-size:6.5pt;padding:1px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
 function imprimir(html){const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();return;}
@@ -809,15 +822,329 @@ function vRep(f0){const corte=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:maxFecha();c
     (PRES?'<button class="btn" onclick="expVal(\''+'E'+'\')">Excel</button><button class="btn sec" onclick="expVal(\'P\')">PDF</button>':'<span class="sub" style="color:var(--mal)">Cargue el presupuesto en Ajustes para habilitarlo.</span>'))+
   rep('📈 Resumen de avance consolidado','Azángaro + Umachiri en soles, con el total de la obra.',
     (PRES?'<button class="btn sec" onclick="imprimir(docHTML(\'Resumen\',\'portrait\',valTotalHTML(repCorte())))">PDF</button>':'<span class="sub" style="color:var(--mal)">Requiere presupuesto.</span>'))+
-  '<div class="card" style="opacity:.6"><div class="est" style="margin:0"><b>Formatos 9, 10, 15, 16, 19 · Cuaderno PDF · Panel fotográfico</b><span class="tag falta">v3.2+</span></div><div class="sub">Se activan con sus módulos (almacén, tareo, fotos).</div></div>'+
+  rep('📦 Formato 9 – Movimiento diario de almacén','Entradas y salidas por fecha, Azángaro y Umachiri.',(CI().length?'<button class="btn" onclick="expF9(&apos;E&apos;)">Excel</button><button class="btn sec" onclick="expF9(&apos;P&apos;)">PDF</button>':'<span class="sub" style="color:var(--mal)">Importe el catálogo de insumos.</span>'))+rep('📦 Formato 10 – Resumen de almacén','Presupuestado, entrada, salida y saldo por material.',(CI().length?'<button class="btn" onclick="expF10(&apos;E&apos;)">Excel</button><button class="btn sec" onclick="expF10(&apos;P&apos;)">PDF</button>':'<span class="sub" style="color:var(--mal)">Importe el catálogo de insumos.</span>'))+rep('👷 Formato 15 – Hoja de Tareo','Asistencia semanal (L–D) por trabajador. Usa la semana de la fecha de corte.','<button class="btn" onclick="expF15(&apos;E&apos;)">Excel</button><button class="btn sec" onclick="expF15(&apos;P&apos;)">PDF</button>')+rep('💵 Formato 16 – Hoja de Jornales','Días × jornal por trabajador, con total a pagar.','<button class="btn" onclick="expF16(&apos;E&apos;)">Excel</button><button class="btn sec" onclick="expF16(&apos;P&apos;)">PDF</button>')+rep('📷 Panel fotográfico','Fotos del avance, con fecha y descripción.','<button class="btn sec" onclick="ir(&apos;#/fotos&apos;)">Abrir / Exportar</button>')+rep('📄 Informe Mensual (Formato 33)','Carátula con avance físico-financiero y lista de anexos.',(PRES?'<button class="btn sec" onclick="informe33(repCorte())">PDF</button>':'<span class="sub" style="color:var(--mal)">Requiere presupuesto.</span>'))+rep('💼 Formato 19 – Autorización de Gastos del Residente','Coeficiente, días por asistir/asistidos, factor y monto del mes.',(PRES?'<button class="btn sec" onclick="expF19()">Generar (Excel/PDF)</button>':'<span class="sub" style="color:var(--mal)">Requiere presupuesto.</span>'))+
   '<div class="prev" style="text-align:left">Los formatos oficiales saldrán idénticos a la guía MACA 2026, con cabecera y firmas automáticas.</div></main>';}
 function repCorte(){const el=$('#rF');return el&&el.value?el.value:maxFecha();}
 async function expMatriz(pdf){const corte=repCorte();if(pdf){imprimir(matrizHTML(corte));return;}
  try{const blob=await libroXlsx([hojaMatriz(corte)]);pickGuardar(blob,'Metrado_Diario_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
 async function expVal(modo){const corte=repCorte();if(!PRES)return aviso('Cargue el presupuesto para generar la valorización.');
- if(modo==='P'){imprimir(docHTML('Valorización F18','landscape',OBRAS.map(o=>valHTMLobra(o.k,corte)+'<div style="page-break-after:always"></div>').join('')+valTotalHTML(corte)));return;}
- try{const blob=await libroXlsx(OBRAS.map(o=>hojaVal(o.k,corte)));pickGuardar(blob,'Valorizacion_F18_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
+ if(modo==='P'){imprimir(docHTML('Valorización F18','landscape',valHTML18(corte)+'<div style="page-break-after:always"></div>'+valTotalHTML(corte)));return;}
+ try{const blob=await libroXlsx([hojaVal18(corte)]);pickGuardar(blob,'Valorizacion_F18_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
 async function pickGuardar(blob,nombre){const v=await modal('<h3>Archivo listo</h3><p>'+esc(nombre)+'</p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}
+
+
+// ===== Valorización F18 en una sola hoja (Azángaro arriba, Umachiri abajo, TOTAL OBRA) =====
+function hojaVal18(corte){const mes=corte.slice(0,7),PP=(v,b)=>b?v/b:0;
+ const rows=[[{v:'FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN – '+(TIT||'')+(TIT2?' ('+TIT2+')':''),s:4}],
+  [{v:'CORRESPONDIENTE AL MES DE '+MESU(mes)+' (al '+fF(corte)+')',s:0}],
+  [{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp,s:0}],[],
+  [{v:'PARTIDA',s:1},{v:'DESCRIPCIÓN',s:1},{v:'PRESUPUESTO',s:1},{v:'',s:1},{v:'',s:1},{v:'',s:1},{v:'ANTERIOR',s:1},{v:'',s:1},{v:'',s:1},{v:'ACTUAL',s:1},{v:'',s:1},{v:'',s:1},{v:'ACUMULADO',s:1},{v:'',s:1},{v:'',s:1},{v:'SALDO',s:1},{v:'',s:1},{v:'',s:1}],
+  [{v:'',s:1},{v:'',s:1},{v:'Unid',s:1},{v:'Metrado',s:1},{v:'P.Unit',s:1},{v:'Presup. S/',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1},{v:'Metrado',s:1},{v:'Valorizado',s:1},{v:'%',s:1}]];
+ const G={presup:0,antV:0,actV:0,acuV:0,salV:0};
+ OBRAS.forEach(o=>{const {filas,T}=valObra(o.k,corte);
+  rows.push([{v:o.n,s:7}].concat(Array.from({length:17},()=>({v:'',s:7}))));
+  filas.forEach(f=>rows.push([{v:f.i,s:8},{v:f.d,s:3},{v:und(f.u),s:8},{v:f.metT,s:2},{v:f.pu,s:2},{v:f.presup,s:2},
+   {v:f.antM||'',s:2},{v:f.antV||'',s:2},{v:PP(f.antV,f.presup),s:5},
+   {v:f.actM||'',s:2},{v:f.actV||'',s:2},{v:PP(f.actV,f.presup),s:5},
+   {v:f.acuM||'',s:2},{v:f.acuV||'',s:2},{v:PP(f.acuV,f.presup),s:5},
+   {v:f.salM,s:2},{v:f.salV,s:2},{v:PP(f.salV,f.presup),s:5}]));
+  rows.push([{v:'',s:6},{v:'SUBTOTAL '+o.n,s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:T.presup,s:6},{v:'',s:6},{v:T.antV,s:6},{v:PP(T.antV,T.presup),s:6},{v:'',s:6},{v:T.actV,s:6},{v:PP(T.actV,T.presup),s:6},{v:'',s:6},{v:T.acuV,s:6},{v:PP(T.acuV,T.presup),s:6},{v:'',s:6},{v:T.salV,s:6},{v:PP(T.salV,T.presup),s:6}]);
+  G.presup+=T.presup;G.antV+=T.antV;G.actV+=T.actV;G.acuV+=T.acuV;G.salV+=T.salV;});
+ rows.push([{v:'',s:6},{v:'TOTAL OBRA',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:G.presup,s:6},{v:'',s:6},{v:G.antV,s:6},{v:PP(G.antV,G.presup),s:6},{v:'',s:6},{v:G.actV,s:6},{v:PP(G.actV,G.presup),s:6},{v:'',s:6},{v:G.acuV,s:6},{v:PP(G.acuV,G.presup),s:6},{v:'',s:6},{v:G.salV,s:6},{v:PP(G.salV,G.presup),s:6}]);
+ return{name:'FORMATO 18',frz:6,frzX:2,w:[9,42,6,10,9,12,10,12,7,10,12,7,10,12,7,10,12,7],rows,merge:['A1:R1','A2:R2','A3:R3','C5:F5','G5:I5','J5:L5','M5:O5','P5:R5','A5:A6','B5:B6']};}
+function valHTML18(corte){const mes=corte.slice(0,7),pc=(v,b)=>b?n2(v/b*100):'0.00';const G={presup:0,antV:0,actV:0,acuV:0,salV:0};
+ let body='';OBRAS.forEach(o=>{const {filas,T}=valObra(o.k,corte);
+  body+='<tr class="ob"><td colspan="18">'+esc(o.n)+'</td></tr>';
+  filas.forEach(f=>body+='<tr><td>'+f.i+'</td><td class="l">'+esc(f.d)+'</td><td>'+esc(und(f.u))+'</td><td class="n">'+n2(f.metT)+'</td><td class="n">'+n2(f.pu)+'</td><td class="n">'+n2(f.presup)+'</td>'+
+   '<td class="n">'+(f.antM?n2(f.antM):'')+'</td><td class="n">'+(f.antV?n2(f.antV):'')+'</td><td class="n">'+pc(f.antV,f.presup)+'</td>'+
+   '<td class="n">'+(f.actM?n2(f.actM):'')+'</td><td class="n">'+(f.actV?n2(f.actV):'')+'</td><td class="n">'+pc(f.actV,f.presup)+'</td>'+
+   '<td class="n">'+(f.acuM?n2(f.acuM):'')+'</td><td class="n">'+(f.acuV?n2(f.acuV):'')+'</td><td class="n">'+pc(f.acuV,f.presup)+'</td>'+
+   '<td class="n">'+n2(f.salM)+'</td><td class="n">'+n2(f.salV)+'</td><td class="n">'+pc(f.salV,f.presup)+'</td></tr>');
+  body+='<tr class="t"><td colspan="5">SUBTOTAL '+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td></td><td class="n">'+n2(T.antV)+'</td><td class="n">'+pc(T.antV,T.presup)+'</td><td></td><td class="n">'+n2(T.actV)+'</td><td class="n">'+pc(T.actV,T.presup)+'</td><td></td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+pc(T.acuV,T.presup)+'</td><td></td><td class="n">'+n2(T.salV)+'</td><td class="n">'+pc(T.salV,T.presup)+'</td></tr>';
+  G.presup+=T.presup;G.antV+=T.antV;G.actV+=T.actV;G.acuV+=T.acuV;G.salV+=T.salV;});
+ const tot='<tr class="t" style="background:#cfe0ef"><td colspan="5">TOTAL OBRA</td><td class="n">'+n2(G.presup)+'</td><td></td><td class="n">'+n2(G.antV)+'</td><td class="n">'+pc(G.antV,G.presup)+'</td><td></td><td class="n">'+n2(G.actV)+'</td><td class="n">'+pc(G.actV,G.presup)+'</td><td></td><td class="n">'+n2(G.acuV)+'</td><td class="n">'+pc(G.acuV,G.presup)+'</td><td></td><td class="n">'+n2(G.salV)+'</td><td class="n">'+pc(G.salV,G.presup)+'</td></tr>';
+ return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc(TIT||'')+' · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+  '<table class="g"><thead><tr><th rowspan="2">PARTIDA</th><th rowspan="2" class="l">DESCRIPCIÓN</th><th colspan="4">PRESUPUESTO</th><th colspan="3">ANTERIOR</th><th colspan="3">ACTUAL</th><th colspan="3">ACUMULADO</th><th colspan="3">SALDO</th></tr>'+
+  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML(['ADMINISTRADOR','RESIDENTE','SUPERVISOR'],corte);}
+
+
+// ========== v3.2: Almacén (catálogo, ingresos, salidas, Formatos 9 y 10) ==========
+function colNum(L){let n=0;for(let i=0;i<L.length;i++)n=n*26+(L.charCodeAt(i)-64);return n-1;}
+function deEnt(s){return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(m,d)=>String.fromCharCode(+d)).replace(/&amp;/g,'&');}
+async function leerXlsx(file){const z=await JSZip.loadAsync(file);let ss=[];
+ const sf=z.file('xl/sharedStrings.xml');if(sf){const t=await sf.async('string');ss=[...t.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m=>deEnt([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x=>x[1]).join('')));}
+ const names=Object.keys(z.files).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort();if(!names.length)return [];
+ const xml=await z.file(names[0]).async('string');const rows=[];
+ [...xml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)].forEach(rm=>{const cells=[];
+  [...rm[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].forEach(cm=>{const at=cm[1]||'';const rr=(at.match(/r="([A-Z]+)\d+"/)||[])[1];if(!rr)return;const ci=colNum(rr);const t=(at.match(/t="([^"]+)"/)||[])[1];const body=cm[2]||'';let v='';
+    const vm=body.match(/<v>([\s\S]*?)<\/v>/);const ism=body.match(/<is>([\s\S]*?)<\/is>/);
+    if(t==='s'&&vm)v=ss[+vm[1]]||'';else if(ism)v=deEnt([...ism[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x=>x[1]).join(''));else if(vm)v=vm[1];
+    cells[ci]=v;});
+  rows.push(cells);});
+ return rows;}
+// ---- modelo almacén ----
+function CI(){return S.insumos||[];}
+function movDia(f){return AL().mov.filter(m=>m.f===f).length;}
+function AL(){if(!S.alm)S.alm={mov:[]};return S.alm;}
+const insByCod=c=>CI().find(x=>x.cod===c);
+const insByNom=n=>CI().find(x=>x.ins.toLowerCase()===String(n).trim().toLowerCase());
+function presuCod(cod,obra){const x=insByCod(cod);if(!x)return 0;return obra==='AZ'?x.az:obra==='UM'?x.um:x.tot;}
+function ingCod(cod,obra){return AL().mov.filter(m=>m.tipo==='ING'&&m.cod===cod&&(!obra||m.obra===obra)).reduce((s,m)=>s+m.cant,0);}
+function salCod(cod,obra){return AL().mov.filter(m=>m.tipo==='SAL'&&m.cod===cod&&(!obra||m.obra===obra)).reduce((s,m)=>s+m.cant,0);}
+const saldoCod=(cod,obra)=>ingCod(cod,obra)-salCod(cod,obra);
+const n3=v=>{v=Math.round(v*1000)/1000;return (v%1===0?v.toFixed(0):String(v));};
+// ---- importación ----
+async function importArchivo(file){if(!file)return;try{
+ if(/\.json$/i.test(file.name)){const d=JSON.parse(await file.text());
+   if(d&&d.app==='avobra-insumos'&&Array.isArray(d.insumos))return confirmarCatalogo(d.insumos);
+   if(d&&(d.app==='avobra'||d.regs))return restaurarObj(d);
+   return aviso('El archivo JSON no es un catálogo de insumos ni un respaldo válido.');}
+ const rows=await leerXlsx(file);if(!rows.length)return aviso('No se pudo leer el Excel.');
+ // detectar fila de encabezado
+ let hi=-1,H=[];for(let i=0;i<Math.min(rows.length,14);i++){const r=(rows[i]||[]).map(x=>String(x||'').toUpperCase());
+   const iM=r.findIndex(c=>/MATERIAL/.test(c)),iO=r.findIndex(c=>/OBRA/.test(c)),iC=r.findIndex(c=>/CANTIDAD/.test(c));
+   if(iM>=0&&iO>=0&&iC>=0&&iM!==iO){hi=i;H=r;break;}
+   const iCod=r.findIndex(c=>/C[OÓ]DIGO/.test(c)),iIns=r.findIndex(c=>/INSUMO|DESCRIP/.test(c)),iU=r.findIndex(c=>/UNIDAD/.test(c));
+   if(iCod>=0&&iIns>=0&&iU>=0&&iCod!==iIns){hi=i;H=r;break;}}
+ if(hi<0)return aviso('No reconocí el archivo. Use el Catálogo de insumos o la Plantilla de ingresos.');
+ const idx=re=>H.findIndex(c=>re.test(c));
+ if(H.some(c=>/MATERIAL/.test(c))&&H.some(c=>/OBRA/.test(c))){
+   const cF=idx(/FECHA/),cM=idx(/MATERIAL/),cU=idx(/UNIDAD/),cP=idx(/PROVEED/),cG=idx(/GU[IÍ]A|COMPROB/),cC=idx(/CANTIDAD/),cO=idx(/OBRA/);
+   const ing=[];for(let i=hi+1;i<rows.length;i++){const r=rows[i]||[];const mat=String(r[cM]||'').trim();const cant=parseFloat(String(r[cC]||'').replace(',','.'));const obra=String(r[cO]||'').trim().toUpperCase().slice(0,2);
+     if(!mat||!(cant>0))continue;const ix=insByNom(mat);ing.push({f:fechaISO(r[cF]),ins:mat,cod:ix?ix.cod:'',u:ix?ix.u:String(r[cU]||'').trim(),prov:String(r[cP]||'').trim(),guia:String(r[cG]||'').trim(),cant:Math.round(cant*1000)/1000,obra:(obra==='AZ'||obra==='UM')?obra:'AZ',ok:!!ix});}
+   if(!ing.length)return aviso('La plantilla no tiene filas de ingresos válidas.');
+   return confirmarIngresos(ing);}
+ else{const cC=idx(/C[OÓ]DIGO/),cI=idx(/INSUMO|DESCRIP/),cU=idx(/UNIDAD/),cA=idx(/AZ[AÁ]NGARO/),cM=idx(/UMACHIRI/),cT=idx(/TOTAL/),cP=idx(/UNIT/);
+   const cat=[];for(let i=hi+1;i<rows.length;i++){const r=rows[i]||[];const cod=String(r[cC]||'').trim();const ins=String(r[cI]||'').trim();if(!cod||!ins)continue;
+     const az=parseFloat(r[cA])||0,um=parseFloat(r[cM])||0;cat.push({cod,ins,u:String(r[cU]||'').trim(),az,um,tot:parseFloat(r[cT])||az+um,pu:parseFloat(r[cP])||0,req:''});}
+   if(!cat.length)return aviso('El catálogo no tiene insumos.');
+   return confirmarCatalogo(cat);}
+ }catch(e){aviso('Error al importar: '+e.message);}}
+function fechaISO(v){if(!v)return hoy();v=String(v).trim();let m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+pad(+m[2])+'-'+pad(+m[1]);if(/^\d{4}-\d\d-\d\d/.test(v))return v.slice(0,10);const n=parseFloat(v);if(n>30000&&n<60000){const d=new Date(Date.UTC(1899,11,30)+n*864e5);return d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());}return hoy();}
+async function confirmarCatalogo(cat){const v=await modal('<h3>Importar catálogo de insumos</h3><p>Se cargarán <b>'+cat.length+'</b> insumos del expediente.'+(CI().length?' Esto <b>reemplaza</b> el catálogo actual ('+CI().length+').':'')+'</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="">Cancelar</button><button class="btn ok" data-v="ok">Importar</button></div>');
+ if(v!=='ok')return;S.insumos=cat.map(x=>({cod:x.cod,ins:x.ins,u:x.u,az:+x.az||0,um:+x.um||0,tot:+x.tot||0,pu:+x.pu||0,req:x.req||''}));if(guardar()){toast('✔ Catálogo: '+cat.length+' insumos');ir('#/almacen',true);}}
+async function confirmarIngresos(ing){const sinCat=ing.filter(x=>!x.ok).length;
+ const v=await modal('<h3>Importar ingresos</h3><p>Se cargarán <b>'+ing.length+'</b> ingreso(s) de materiales.'+(sinCat?'<br><span style="color:var(--mal)">'+sinCat+' no están en el catálogo; se cargarán igual, revise el nombre.</span>':'')+'</p><div class="pre" style="max-height:160px">'+ing.slice(0,12).map(x=>fF(x.f)+' · '+esc(x.ins)+' · '+n3(x.cant)+' '+esc(x.u)+' · '+x.obra).join('\n')+(ing.length>12?'\n…':'')+'</div><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="">Cancelar</button><button class="btn ok" data-v="ok">Importar</button></div>');
+ if(v!=='ok')return;const al=AL();ing.forEach(x=>al.mov.push({id:uid(),tipo:'ING',f:x.f,cod:x.cod,ins:x.ins,u:x.u,prov:x.prov,guia:x.guia,part:'',obra:x.obra,cant:x.cant,t:Date.now()}));
+ if(guardar()){toast('✔ '+ing.length+' ingreso(s) cargados');ir('#/almacen',true);}}
+function restaurarObj(d){window._impObj=d;ir('#/respaldo');toast('Use "Restaurar" en Ajustes para este respaldo.');}
+// ---- vista almacén ----
+let almObra='AZ',almQ='';
+function vAlmacen(){if(!CI().length){app.innerHTML=bar('ALMACÉN','Sin catálogo',true)+'<main><div class="card"><p>Primero importe el <b>catálogo de insumos</b> del expediente.</p><div class="btns"><button class="btn full" onclick="ir(\'#/import\')">🗂️ Ir a Importar</button></div></div></main>';return;}
+ const mov=AL().mov;const q=almQ.toLowerCase();
+ const list=CI().filter(x=>presuCod(x.cod,almObra)>0||ingCod(x.cod,almObra)>0).filter(x=>!q||x.ins.toLowerCase().includes(q)||x.cod.toLowerCase().includes(q));
+ const chip=(k,t)=>'<button class="chip'+(almObra===k?' on':'')+'" onclick="almObra=\''+k+'\';vAlmacen()">'+t+'</button>';
+ let rows=list.map(x=>{const ing=ingCod(x.cod,almObra),sal=salCod(x.cod,almObra),sal2=ing-sal,pre=presuCod(x.cod,almObra);
+   return '<div class="card" style="padding:10px"><div class="est" style="margin:0"><b style="font-size:14px">'+esc(x.ins)+'</b></div><div class="sub">'+x.cod+' · '+esc(x.u)+' · presup. '+n3(pre)+'</div><div class="kv"><span>Ingresado</span><b>'+n3(ing)+'</b></div><div class="kv"><span>Usado (salidas)</span><b>'+n3(sal)+'</b></div><div class="kv"><span>Saldo</span><b class="'+(sal2<0?'c-mal':'')+'">'+n3(sal2)+'</b></div></div>';}).join('');
+ app.innerHTML=bar('ALMACÉN',OBRAS.find(o=>o.k===almObra).n,true)+'<main>'+
+  '<div class="chips">'+OBRAS.map(o=>chip(o.k,o.n)).join('')+'</div>'+
+  '<div class="btns"><button class="btn ok" onclick="formMov(\'ING\')">＋ Ingreso</button><button class="btn" onclick="formMov(\'SAL\')">－ Salida</button></div>'+
+  '<div class="btns"><button class="btn sec" onclick="ir(\'#/import\')">📥 Importar</button><button class="btn sec" onclick="ir(\'#/almmov\')">📋 Movimientos</button></div>'+
+  '<input class="sel" placeholder="🔎 Buscar insumo…" value="'+esc(almQ)+'" oninput="almQ=this.value;clearTimeout(window._aq);window._aq=setTimeout(vAlmacen,300)">'+
+  (rows||'<div class="vacio">Sin insumos con presupuesto o ingresos en esta obra.</div>')+'</main>';}
+function formMov(tipo,f0){const al=AL();const dl=CI().map(x=>'<option value="'+esc(x.ins)+'" data-cod="'+x.cod+'" data-u="'+esc(x.u)+'">').join('');
+ const parts=DB[almObra].caps.map(c=>c.p.map(p=>'<option value="'+p.i+' '+esc(p.d)+'">').join('')).join('');
+ app.innerHTML=bar(tipo==='ING'?'REGISTRAR INGRESO':'REGISTRAR SALIDA',OBRAS.find(o=>o.k===almObra).n,true)+'<main><div class="card">'+
+  '<label class="l">OBRA</label><select id="mvO" class="sel">'+OBRAS.map(o=>'<option value="'+o.k+'"'+(o.k===almObra?' selected':'')+'>'+esc(o.n)+'</option>').join('')+'</select>'+
+  '<label class="l">FECHA</label><div class="fecha"><input type="date" id="mvF" value="'+(f0||fechaDefecto())+'" min="'+INICIO+'" max="'+maxFecha()+'"></div>'+
+  '<label class="l">INSUMO</label><input id="mvIns" class="sel" list="mvDL" placeholder="Escriba o elija" oninput="mvAuto()"><datalist id="mvDL">'+dl+'</datalist>'+
+  '<div id="mvInfo" class="prev" style="text-align:left"></div>'+
+  '<label class="l">CANTIDAD</label><input id="mvC" class="sel" inputmode="decimal" placeholder="0">'+
+  (tipo==='ING'?'<label class="l">PROVEEDOR</label><input id="mvProv" class="sel"><label class="l">GUÍA / COMPROBANTE</label><input id="mvGuia" class="sel">':'<label class="l">PARTIDA DE DESTINO</label><input id="mvPart" class="sel" list="mvPL" placeholder="Elija la partida"><datalist id="mvPL">'+parts+'</datalist>')+
+  '<div id="mvErr"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarMov(\''+tipo+'\')">GUARDAR</button></div></div></main>';
+ window._mvTipo=tipo;}
+function mvAuto(){const inp=$('#mvIns');const o=[...$('#mvDL').options].find(x=>x.value.toLowerCase()===inp.value.trim().toLowerCase());const info=$('#mvInfo');const obra=$('#mvO').value;
+ if(o){const cod=o.dataset.cod;const s=saldoCod(cod,obra);info.innerHTML='Código '+cod+' · unidad '+esc(o.dataset.u)+' · <b>saldo actual: '+n3(s)+'</b>';}else info.textContent='';}
+function guardarMov(tipo){const o=$('#mvO').value,f=$('#mvF').value,nom=$('#mvIns').value.trim(),c=parseFloat(($('#mvC').value||'').replace(',','.')),e=$('#mvErr');e.innerHTML='';const er=m=>{e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
+ if(!/^\d{4}-\d\d-\d\d$/.test(f))return er('Elija la fecha.');if(!nom)return er('Elija el insumo.');if(!(c>0))return er('Escriba una cantidad válida.');
+ const ix=insByNom(nom);const cod=ix?ix.cod:'';const u=ix?ix.u:'';
+ const mv={id:uid(),tipo,f,cod,ins:ix?ix.ins:nom,u,prov:'',guia:'',part:'',obra:o,cant:Math.round(c*1000)/1000,t:Date.now()};
+ if(tipo==='ING'){mv.prov=$('#mvProv').value.trim();mv.guia=$('#mvGuia').value.trim();}
+ else{mv.part=$('#mvPart').value.trim();if(cod){const s=saldoCod(cod,o);if(c>s+1e-9&&!window._okExc){window._okExc=true;return er('La salida ('+n3(c)+') supera el saldo en almacén ('+n3(s)+'). Toque GUARDAR otra vez para forzarlo.');}}}
+ window._okExc=false;const al=AL();al.mov.push(mv);if(!guardar()){al.mov.pop();return;}toast('✔ '+(tipo==='ING'?'Ingreso':'Salida')+' registrado');ir('#/almacen',true);}
+function vAlmMov(){const mov=AL().mov.slice().sort((a,b)=>a.f<b.f?1:a.f>b.f?-1:b.t-a.t);
+ let rows=mov.map(m=>'<div class="card" style="padding:10px" onclick="borrarMov(\''+m.id+'\')"><div class="est" style="margin:0"><b>'+(m.tipo==='ING'?'🟢 Ingreso':'🔴 Salida')+' · '+esc(m.ins)+'</b><span class="tag">'+m.obra+'</span></div><div class="sub">'+fF(m.f)+' · '+n3(m.cant)+' '+esc(m.u)+(m.tipo==='ING'?(m.prov?' · '+esc(m.prov):''):(m.part?' · '+esc(m.part):''))+'</div></div>').join('');
+ app.innerHTML=bar('MOVIMIENTOS','Ingresos y salidas',true)+'<main>'+(mov.length?'<div class="prev" style="text-align:left">Toque un movimiento para borrarlo.</div>'+rows:'<div class="vacio">Sin movimientos.</div>')+'</main>';}
+async function borrarMov(id){const m=AL().mov.find(x=>x.id===id);if(!m)return;const c=await modal('<h3>¿Borrar movimiento?</h3><p>'+(m.tipo==='ING'?'Ingreso':'Salida')+' · '+esc(m.ins)+' · '+n3(m.cant)+' '+esc(m.u)+'</p><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar</button></div>');if(c!=='si')return;const al=AL();al.mov=al.mov.filter(x=>x.id!==id);if(guardar()){toast('Borrado');ir('#/almmov',true);}}
+// ---- Formato 9 (movimiento diario) ----
+function f9Rows(k){return AL().mov.filter(m=>m.obra===k).slice().sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:a.t-b.t);}
+function hojaF9(corte){const rows=[[{v:'FORMATO N° 9: CUADRO DE MOVIMIENTO DIARIO DE ALMACÉN',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp+'   (al '+fF(corte)+')',s:0}],[],
+  [{v:'FECHA',s:1},{v:'MATERIAL/HERRAMIENTA',s:1},{v:'UNIDAD',s:1},{v:'ENTRADA',s:1},{v:'',s:1},{v:'SALIDA',s:1},{v:'',s:1}],
+  [{v:'',s:1},{v:'',s:1},{v:'',s:1},{v:'Proveedor',s:1},{v:'Cantidad',s:1},{v:'Partida',s:1},{v:'Cantidad',s:1}]];
+ OBRAS.forEach(o=>{rows.push([{v:o.n,s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7}]);
+  f9Rows(o.k).filter(m=>m.f<=corte).forEach(m=>rows.push([{v:fF(m.f),s:8},{v:m.ins,s:3},{v:m.u,s:8},{v:m.tipo==='ING'?m.prov:'',s:3},{v:m.tipo==='ING'?m.cant:'',s:2},{v:m.tipo==='SAL'?m.part:'',s:3},{v:m.tipo==='SAL'?m.cant:'',s:2}]));});
+ return{name:'FORMATO 9',frz:5,frzX:3,w:[11,40,8,22,10,30,10],rows,merge:['A1:G1','A2:G2','D4:E4','F4:G4','A4:A5','B4:B5','C4:C5']};}
+function f9HTML(corte){let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td colspan="7">'+esc(o.n)+'</td></tr>';
+  f9Rows(o.k).filter(m=>m.f<=corte).forEach(m=>body+='<tr><td>'+fF(m.f)+'</td><td class="l">'+esc(m.ins)+'</td><td>'+esc(m.u)+'</td><td class="l">'+(m.tipo==='ING'?esc(m.prov):'')+'</td><td class="n">'+(m.tipo==='ING'?n3(m.cant):'')+'</td><td class="l">'+(m.tipo==='SAL'?esc(m.part):'')+'</td><td class="n">'+(m.tipo==='SAL'?n3(m.cant):'')+'</td></tr>');});
+ if(!body)body='<tr><td colspan="7">Sin movimientos.</td></tr>';
+ return '<h1>FORMATO N° 9: CUADRO DE MOVIMIENTO DIARIO DE ALMACÉN</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · al '+fF(corte)+'</div>'+
+  '<table class="g"><thead><tr><th rowspan="2">FECHA</th><th rowspan="2" class="l">MATERIAL/HERRAMIENTA</th><th rowspan="2">UNIDAD</th><th colspan="2">ENTRADA</th><th colspan="2">SALIDA</th></tr><tr><th>Proveedor</th><th>Cantidad</th><th>Partida</th><th>Cantidad</th></tr></thead><tbody>'+body+'</tbody></table>'+
+  firmasHTML(['PRESIDENTE','TESORERO','RESIDENTE'],corte);}
+// ---- Formato 10 (resumen) ----
+function hojaF10(corte){const rows=[[{v:'FORMATO N° 10: CUADRO RESUMEN DE MOVIMIENTO DE ALMACÉN',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp+'   (al '+fF(corte)+')',s:0}],[],
+  ['N°','MATERIAL/HERRAMIENTA','UNIDAD','PRESUP.','ENTRADA (acum.)','SALIDA (acum.)','SALDO'].map(h=>({v:h,s:1}))];
+ OBRAS.forEach(o=>{rows.push([{v:o.n,s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7},{v:'',s:7}]);let n=0;
+  CI().forEach(x=>{const ing=AL().mov.filter(m=>m.tipo==='ING'&&m.cod===x.cod&&m.obra===o.k&&m.f<=corte).reduce((s,m)=>s+m.cant,0);
+   const sal=AL().mov.filter(m=>m.tipo==='SAL'&&m.cod===x.cod&&m.obra===o.k&&m.f<=corte).reduce((s,m)=>s+m.cant,0);
+   if(ing===0&&sal===0)return;n++;rows.push([{v:n,s:8},{v:x.ins,s:3},{v:x.u,s:8},{v:presuCod(x.cod,o.k),s:2},{v:ing,s:2},{v:sal,s:2},{v:ing-sal,s:2}]);});});
+ return{name:'FORMATO 10',frz:4,frzX:2,w:[5,42,8,11,14,14,11],rows,merge:['A1:G1','A2:G2']};}
+function f10HTML(corte){let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td colspan="7">'+esc(o.n)+'</td></tr>';let n=0;
+  CI().forEach(x=>{const ing=AL().mov.filter(m=>m.tipo==='ING'&&m.cod===x.cod&&m.obra===o.k&&m.f<=corte).reduce((s,m)=>s+m.cant,0);
+   const sal=AL().mov.filter(m=>m.tipo==='SAL'&&m.cod===x.cod&&m.obra===o.k&&m.f<=corte).reduce((s,m)=>s+m.cant,0);
+   if(ing===0&&sal===0)return;n++;body+='<tr><td>'+n+'</td><td class="l">'+esc(x.ins)+'</td><td>'+esc(x.u)+'</td><td class="n">'+n3(presuCod(x.cod,o.k))+'</td><td class="n">'+n3(ing)+'</td><td class="n">'+n3(sal)+'</td><td class="n">'+n3(ing-sal)+'</td></tr>';});});
+ if(!body)body='<tr><td colspan="7">Sin movimientos.</td></tr>';
+ return '<h1>FORMATO N° 10: CUADRO RESUMEN DE MOVIMIENTO DE ALMACÉN</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · al '+fF(corte)+'</div>'+
+  '<table class="g"><thead><tr><th>N°</th><th class="l">MATERIAL/HERRAMIENTA</th><th>UNIDAD</th><th>PRESUP.</th><th>ENTRADA (acum.)</th><th>SALIDA (acum.)</th><th>SALDO</th></tr></thead><tbody>'+body+'</tbody></table>'+
+  firmasHTML(['PRESIDENTE','TESORERO','RESIDENTE'],corte);}
+async function expF9(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 9','landscape',f9HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF9(corte)]),'Formato9_Almacen_al_'+corte+'.xlsx');}catch(e){aviso(e.message);}}
+async function expF10(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 10','landscape',f10HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF10(corte)]),'Formato10_Almacen_al_'+corte+'.xlsx');}catch(e){aviso(e.message);}}
+
+
+// ========== v3.3: Asistencia, Tareo (F15) y Jornales (F16) ==========
+function ASIS(){if(!S.asis)S.asis={};return S.asis;}
+const asisDe=f=>ASIS()[f]||[];
+function lunesDe(f){const d=new Date(f+'T12:00:00');const g=d.getDay();d.setDate(d.getDate()+(g===0?-6:1-g));return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function semanaDias(f){const L=lunesDe(f),a=[];for(let k=0;k<7;k++)a.push(fechaMas(L,k));return a;}
+function semNum(f){return Math.floor(diffD(lunesDe(INICIO),lunesDe(f))/7)+1;}
+function obrerosVig(f){return CA().filter(a=>a.rol==='OBRERO'&&a.nom&&desdeEf(a)<=f&&(!a.hasta||a.hasta>=f));}
+function diasTrab(ag,dias){return dias.filter(f=>asisDe(f).includes(ag.id)).length;}
+const genN=g=>g==='F'?'Fem.':'Masc.';
+// ---- pantalla de asistencia ----
+function vAsis(f0){const f=(f0&&/^\d{4}-\d\d-\d\d$/.test(f0))?f0:fechaDefecto();const ob=obrerosVig(f);const pres=asisDe(f);
+ if(!ob.length){app.innerHTML=bar('ASISTENCIA',fF(f),true)+'<main><div class="card"><p>No hay obreros en el padrón para esta fecha.</p><div class="btns"><button class="btn full" onclick="nuevoObrero()">＋ Agregar obrero</button><button class="btn sec full" onclick="ir(\'#/agentes\')">👷 Base de agentes</button></div></div></main>';return;}
+ const fila=a=>'<label class="pt" style="cursor:pointer"><input type="checkbox" class="asc" value="'+a.id+'"'+(pres.includes(a.id)?' checked':'')+' style="width:22px;height:22px;margin-right:10px"><span class="it" style="min-width:70px">'+catN(a.cat)+'</span><span class="ds">'+esc(a.nom)+(a.dni?' <small>DNI '+a.dni+'</small>':'')+'</span></label>';
+ app.innerHTML=bar('ASISTENCIA DEL DÍA',diaSem(f)+' '+fF(f),true)+'<main>'+
+  '<div class="card"><div class="fecha"><input type="date" id="asF" value="'+f+'" min="'+INICIO+'" max="'+maxFecha()+'" onchange="ir(\'#/asis/\'+this.value,true)"><button class="hoy" onclick="ir(\'#/asis/\'+fechaDefecto(),true)">Hoy</button></div></div>'+
+  '<div class="btns"><button class="btn sec" onclick="document.querySelectorAll(\'.asc\').forEach(c=>c.checked=true)">Marcar todos</button><button class="btn sec" onclick="document.querySelectorAll(\'.asc\').forEach(c=>c.checked=false)">Ninguno</button></div>'+
+  '<div class="card" style="padding:0;overflow:hidden">'+ob.map(fila).join('')+'</div>'+
+  '<div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarAsis(\''+f+'\')">GUARDAR</button></div>'+
+  '<div class="prev" style="text-align:left">Marque quiénes trabajaron hoy. Con esto se arman el Tareo (Formato 15) y los Jornales (Formato 16).</div></main>';}
+function guardarAsis(f){const ids=[...document.querySelectorAll('.asc:checked')].map(c=>c.value);const a=ASIS();if(ids.length)a[f]=ids;else delete a[f];if(guardar()){toast('✔ Asistencia guardada ('+ids.length+')');ir('#/parte/'+f,true);}}
+// ---- Formato 15: Tareo ----
+const LETSEM=['L','M','M','J','V','S','D'];
+function hojaF15(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filter(a=>diasTrab(a,dias)>0);
+ const rows=[[{v:'FORMATO N° 15: HOJA DE TAREO',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp,s:0}],
+  [{v:'Semana N° '+semNum(corte)+'   Periodo del '+fF(dias[0])+' al '+fF(dias[6]),s:0}],[],
+  [{v:'N°',s:1},{v:'NOMBRE Y APELLIDOS',s:1},{v:'CATEGORÍA',s:1},{v:'DOC. IDENTIDAD',s:1}].concat(LETSEM.map(l=>({v:l,s:1}))).concat([{v:'TOTAL DÍAS',s:1}])];
+ ob.forEach((a,i)=>{rows.push([{v:i+1,s:8},{v:a.nom,s:3},{v:catN(a.cat),s:8},{v:a.dni||'',s:8}].concat(dias.map(f=>({v:asisDe(f).includes(a.id)?'X':'',s:8}))).concat([{v:diasTrab(a,dias),s:8}]));});
+ if(!ob.length)rows.push([{v:'(sin asistencia registrada en la semana)',s:0}]);
+ return{name:'FORMATO 15 TAREO',frz:5,frzX:4,w:[5,38,12,13,4,4,4,4,4,4,4,10],rows,merge:['A1:L1','A2:L2','A3:L3']};}
+function f15HTML(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filter(a=>diasTrab(a,dias)>0);
+ let body=ob.map((a,i)=>'<tr><td>'+(i+1)+'</td><td class="l">'+esc(a.nom)+'</td><td>'+catN(a.cat)+'</td><td>'+esc(a.dni||'')+'</td>'+dias.map(f=>'<td>'+(asisDe(f).includes(a.id)?'X':'')+'</td>').join('')+'<td class="n">'+diasTrab(a,dias)+'</td></tr>').join('');
+ if(!ob.length)body='<tr><td colspan="12">Sin asistencia registrada en la semana.</td></tr>';
+ return '<h1>FORMATO N° 15: HOJA DE TAREO</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · Semana N° '+semNum(corte)+' · del '+fF(dias[0])+' al '+fF(dias[6])+'</div>'+
+  '<table class="g"><thead><tr><th>N°</th><th class="l">NOMBRE Y APELLIDOS</th><th>CATEGORÍA</th><th>DOC. IDENTIDAD</th>'+LETSEM.map(l=>'<th>'+l+'</th>').join('')+'<th>TOTAL DÍAS</th></tr></thead><tbody>'+body+'</tbody></table>'+
+  firmasHTML(['RESIDENTE','ADMINISTRADOR','PRESIDENTE','SECRETARIO','FISCAL','TESORERO','SUPERVISOR'],corte);}
+// ---- Formato 16: Jornales ----
+function hojaF16(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filter(a=>diasTrab(a,dias)>0),J=CFG().jornal;
+ const rows=[[{v:'FORMATO N° 16: HOJA DE JORNALES',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp,s:0}],
+  [{v:'Semana N° '+semNum(corte)+'   Periodo del '+fF(dias[0])+' al '+fF(dias[6]),s:0}],[],
+  ['N°','NOMBRE Y APELLIDOS','CATEGORÍA','GÉNERO','DOC. IDENTIDAD','DÍAS','JORNAL (S/)','TOTAL (S/)'].map(h=>({v:h,s:1}))];
+ let T=0;ob.forEach((a,i)=>{const d=diasTrab(a,dias),j=J[a.cat]||0,tot=Math.round(d*j*100)/100;T+=tot;rows.push([{v:i+1,s:8},{v:a.nom,s:3},{v:catN(a.cat),s:8},{v:genN(a.gen),s:8},{v:a.dni||'',s:8},{v:d,s:8},{v:j,s:2},{v:tot,s:2}]);});
+ rows.push([{v:'',s:6},{v:'TOTAL A PAGAR',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:Math.round(T*100)/100,s:6}]);
+ return{name:'FORMATO 16 JORNALES',frz:5,frzX:2,w:[5,38,12,9,14,7,12,13],rows,merge:['A1:H1','A2:H2','A3:H3']};}
+function f16HTML(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filter(a=>diasTrab(a,dias)>0),J=CFG().jornal;let T=0;
+ let body=ob.map((a,i)=>{const d=diasTrab(a,dias),j=J[a.cat]||0,tot=Math.round(d*j*100)/100;T+=tot;return '<tr><td>'+(i+1)+'</td><td class="l">'+esc(a.nom)+'</td><td>'+catN(a.cat)+'</td><td>'+genN(a.gen)+'</td><td>'+esc(a.dni||'')+'</td><td class="n">'+d+'</td><td class="n">'+n2(j)+'</td><td class="n">'+n2(tot)+'</td></tr>';}).join('');
+ if(!ob.length)body='<tr><td colspan="8">Sin asistencia registrada en la semana.</td></tr>';
+ const tot='<tr class="t"><td colspan="7">TOTAL A PAGAR</td><td class="n">'+n2(T)+'</td></tr>';
+ return '<h1>FORMATO N° 16: HOJA DE JORNALES</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Semana N° '+semNum(corte)+' · del '+fF(dias[0])+' al '+fF(dias[6])+'</div>'+
+  '<table class="g"><thead><tr><th>N°</th><th class="l">NOMBRE Y APELLIDOS</th><th>CATEGORÍA</th><th>GÉNERO</th><th>DOC. IDENTIDAD</th><th>DÍAS</th><th>JORNAL (S/)</th><th>TOTAL (S/)</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+
+  firmasHTML(['RESIDENTE','ADMINISTRADOR','TESORERO','PRESIDENTE','SECRETARIO','FISCAL','SUPERVISOR'],corte);}
+async function expF15(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 15','landscape',f15HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF15(corte)]),'Formato15_Tareo_sem'+semNum(corte)+'.xlsx');}catch(e){aviso(e.message);}}
+async function expF16(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 16','landscape',f16HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF16(corte)]),'Formato16_Jornales_sem'+semNum(corte)+'.xlsx');}catch(e){aviso(e.message);}}
+
+
+// ========== v3.4: Cuaderno PDF, Panel fotográfico, Escaneo de folios, Informe 33 ==========
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('avobra_fotos',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function fotoPut(id,data){try{const db=await idb();return await new Promise((res,rej)=>{const t=db.transaction('f','readwrite');t.objectStore('f').put(data,id);t.oncomplete=()=>res(1);t.onerror=()=>rej(t.error);});}catch(e){return 0;}}
+async function fotoGet(id){try{const db=await idb();return await new Promise(res=>{const rq=db.transaction('f','readonly').objectStore('f').get(id);rq.onsuccess=()=>res(rq.result||'');rq.onerror=()=>res('');});}catch(e){return '';}}
+async function fotoDel(id){try{const db=await idb();await new Promise(res=>{const t=db.transaction('f','readwrite');t.objectStore('f').delete(id);t.oncomplete=()=>res();t.onerror=()=>res();});}catch(e){}}
+function FOTOS(){if(!S.fotos)S.fotos=[];return S.fotos;}
+const fotosDe=asid=>FOTOS().filter(x=>x.asid===asid);
+function comprimir(file,max,q){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;const sc=Math.min(1,(max||1280)/Math.max(w,h));const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(w*sc));cv.height=Math.max(1,Math.round(h*sc));cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);try{res(cv.toDataURL('image/jpeg',q||0.55));}catch(e){rej(e);}URL.revokeObjectURL(img.src);};img.onerror=()=>rej(new Error('imagen'));img.src=URL.createObjectURL(file);});}
+let _fotoCtx=null;
+function pedirFoto(tipo,asid,fecha){_fotoCtx={tipo,asid,fecha:fecha||fechaDefecto()};$('#fotoInput').click();}
+async function fotoElegida(file){if(!file||!_fotoCtx)return;try{const data=await comprimir(file,1280,0.55);const id=uid();const ok=await fotoPut(id,data);if(!ok)return aviso('No se pudo guardar la foto en el celular.');
+ FOTOS().push({id,f:_fotoCtx.fecha,tipo:_fotoCtx.tipo,asid:_fotoCtx.asid||'',cap:'',t:Date.now()});guardar();toast('✔ Foto agregada');render();}catch(e){aviso('No se pudo procesar la imagen.');}}
+async function pintarThumbs(){for(const img of document.querySelectorAll('img[data-fid]')){const d=await fotoGet(img.dataset.fid);if(d)img.src=d;}}
+async function borrarFoto(id){const c=await modal('<h3>¿Borrar la foto?</h3><div class="acc" style="grid-template-columns:1fr 1fr"><button class="btn sec" data-v="no">Cancelar</button><button class="btn mal" data-v="si">Borrar</button></div>');if(c!=='si')return;await fotoDel(id);S.fotos=FOTOS().filter(x=>x.id!==id);guardar();toast('Foto borrada');render();}
+async function editaCap(id){const fo=FOTOS().find(x=>x.id===id);if(!fo)return;const v=await modal('<h3>Descripción de la foto</h3><input id="cp" class="sel" value="'+esc(fo.cap||'')+'" style="width:100%"><label class="l">FECHA</label><input type="date" id="cf" class="sel" value="'+fo.f+'" min="'+INICIO+'" max="'+maxFecha()+'"><div class="acc" style="grid-template-columns:1fr 1fr;margin-top:8px"><button class="btn sec" data-v="">Cancelar</button><button class="btn ok" data-v="ok">Guardar</button></div>');if(v!=='ok')return;fo.cap=($('#cp')?$('#cp').value:'').trim();const nf=$('#cf')?$('#cf').value:fo.f;if(/^\d{4}-\d\d-\d\d$/.test(nf))fo.f=nf;guardar();render();}
+// ---- panel fotográfico ----
+function thumb(fo,del){return '<div class="thb"><img data-fid="'+fo.id+'" alt="foto" onclick="editaCap(\''+fo.id+'\')"><div class="cap">'+fF(fo.f)+(fo.cap?' · '+esc(fo.cap):'')+'</div><button class="xf" onclick="borrarFoto(\''+fo.id+'\')">✕</button></div>';}
+function vFotos(){const arr=FOTOS().filter(x=>x.tipo==='panel').sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:a.t-b.t);
+ app.innerHTML=bar('PANEL FOTOGRÁFICO',arr.length+' foto(s)',true)+'<main>'+
+  '<div class="card"><label class="l">FECHA DE LAS FOTOS A AGREGAR</label><input type="date" id="pfFecha" value="'+fechaDefecto()+'" min="'+INICIO+'" max="'+maxFecha()+'"><div class="btns" style="margin-top:8px"><button class="btn ok full" onclick="pedirFoto(\'panel\',\'\',$(\'#pfFecha\').value)">📷 Agregar foto</button></div></div>'+
+  (arr.length?'<div class="galeria">'+arr.map(f=>thumb(f)).join('')+'</div><div class="btns"><button class="btn sec full" onclick="imprimir_panel()">📄 Exportar panel (PDF)</button></div>':'<div class="vacio">Sin fotos. Toque "Agregar foto".</div>')+
+  '<div class="prev" style="text-align:left">Las fotos se guardan comprimidas en el celular. Toque una foto para editar su fecha o descripción.</div></main>';
+ setTimeout(pintarThumbs,30);}
+async function imprimir_panel(){const arr=FOTOS().filter(x=>x.tipo==='panel').sort((a,b)=>a.f<b.f?-1:1);if(!arr.length)return;
+ const imgs=await Promise.all(arr.map(async x=>({x,d:await fotoGet(x.id)})));
+ const body='<style>.gr{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ph{border:1px solid #999;padding:4px;text-align:center;page-break-inside:avoid}.ph img{width:100%;height:auto;max-height:95mm;object-fit:contain}.ph .c{font-size:8pt;margin-top:3px}</style>'+
+  '<h1>PANEL FOTOGRÁFICO</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+'</div><div class="gr">'+imgs.filter(o=>o.d).map(o=>'<div class="ph"><img src="'+o.d+'"><div class="c">'+fF(o.x.f)+(o.x.cap?' – '+esc(o.x.cap):'')+'</div></div>').join('')+'</div>';
+ imprimir(docHTML('Panel fotográfico','portrait',body));}
+// ---- escaneo de folios ----
+function vFolios(asid){const a=CU().as.find(x=>x.id===asid);if(!a){ir('#/cuad',true);return;}const arr=fotosDe(asid).sort((x,y)=>x.t-y.t);
+ app.innerHTML=bar('ESCANEO DE FOLIOS','Asiento N° '+pad(a.n),true)+'<main>'+
+  '<div class="card"><div class="kv"><span>Asiento</span><b>N° '+pad(a.n)+' · '+fF(a.f)+'</b></div><div class="kv"><span>Folio del cuaderno</span><b>'+(a.folio||'—')+'</b></div><div class="btns" style="margin-top:8px"><button class="btn ok full" onclick="pedirFoto(\'folio\',\''+asid+'\',\''+a.f+'\')">📷 Fotografiar hoja del cuaderno</button></div></div>'+
+  (arr.length?'<div class="galeria">'+arr.map(f=>thumb(f)).join('')+'</div>':'<div class="vacio">Sin fotos del folio.</div>')+
+  '<div class="prev" style="text-align:left">Fotografíe las hojas ya escritas del cuaderno físico. Quedan guardadas junto al asiento como respaldo del folio.</div></main>';
+ setTimeout(pintarThumbs,30);}
+// ---- cuaderno: PDF por día ----
+function asientoPDF(a){const body='<div style="text-align:right;font-size:10pt">Folio N° '+(a.folio||'____')+'</div><h1 style="font-size:13pt">CUADERNO DE OBRA</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+'</div><pre style="white-space:pre-wrap;font-family:\'Liberation Serif\',serif;font-size:11.5pt;line-height:1.45;border:0;margin:10px 0">'+esc(textoAsiento(a))+'</pre>'+firmasHTML(a.autor==='S'?['SUPERVISOR','RESIDENTE']:['RESIDENTE','SUPERVISOR'],a.f);
+ imprimir(docHTML('Asiento N° '+pad(a.n),'portrait',body));}
+// ---- Informe mensual (Formato 33) – carátula/índice con avance ----
+function informe33(corte){const mes=corte.slice(0,7);let gp=0,ga=0;const fil=OBRAS.map(o=>{const T=valObra(o.k,corte).T;gp+=T.presup;ga+=T.acuV;return '<tr><td class="l">'+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+(T.presup?n2(T.acuV/T.presup*100):'0.00')+'</td></tr>';}).join('');
+ const pl=plazo();
+ const body='<h1>INFORME MENSUAL DEL RESIDENTE (FORMATO N° 33)</h1><div class="sub">'+esc(TIT2||TIT)+' · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+  '<h2 style="font-size:11pt;color:#1d5a96">1. Avance físico y financiero</h2>'+
+  '<table class="g"><thead><tr><th class="l">OBRA</th><th>PRESUPUESTO</th><th>VALORIZADO ACUM.</th><th>% AVANCE</th></tr></thead><tbody>'+fil+'<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+(gp?n2(ga/gp*100):'0.00')+'</td></tr></tbody></table>'+
+  '<p>Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %. Avance financiero acumulado: '+(gp?n2(ga/gp*100):'0.00')+' %.</p>'+
+  '<h2 style="font-size:11pt;color:#1d5a96">2. Anexos que se adjuntan</h2><ul style="font-size:10pt"><li>Valorización de Avance (Formato N° 18)</li><li>Hoja de Tareo (Formato N° 15) y Hoja de Jornales (Formato N° 16)</li><li>Movimiento de Almacén (Formatos N° 9 y 10)</li><li>Copia de los asientos del Cuaderno de Obra del mes</li><li>Panel fotográfico</li></ul>'+
+  '<h2 style="font-size:11pt;color:#1d5a96">3. Comentario del Residente</h2><p style="min-height:60px">____________________________________________________________</p>'+
+  firmasHTML(['RESIDENTE','SUPERVISOR'],corte);
+ imprimir(docHTML('Informe mensual','portrait',body));}
+
+
+// ========== v3.5: Formato 19 – Autorización de Gastos del Residente (estructura de la guía) ==========
+function diasLaborMes(mes){let g=0;const last=new Date(+mes.slice(0,4),+mes.slice(5,7),0).getDate();for(let d=1;d<=last;d++){const f=mes+'-'+pad(d);if(f<INICIO||f>FIN)continue;const dw=new Date(f+'T12:00:00').getDay();if(dw===0||dw===6)continue;if((CFG().feriados||[]).includes(f))continue;g++;}return g;}
+function diasResMes(mes){const s=new Set();CU().as.forEach(a=>{if(a.autor==='R'&&a.f.slice(0,7)===mes)s.add(a.f);});return s.size;}
+function f19Data(corte,G,H,n){const mes=corte.slice(0,7),first=mes+'-01';const A=CFG().gastoRes||0;const ag=agVig('RESIDENTE',corte);const coef=(ag&&ag.coef)?ag.coef:1;
+ let actV=0,presup=0,antAcuV=0;OBRAS.forEach(o=>{const T=valObra(o.k,corte).T;actV+=T.actV;presup+=T.presup;antAcuV+=valObra(o.k,fechaMas(first,-1)).T.acuV;});
+ const B=presup?actV/presup:0,C=G?H/G:0,D=Math.round(A*B*C*100)/100,E=Math.round(D*n*10/1000*100)/100,F=Math.round((D-E)*100)/100;
+ const acumAnt=Math.round(A*coef*(presup?antAcuV/presup:0)*100)/100;
+ return {mes,A,coef,G,H,n,C,B,acumAnt,D,E,F};}
+function f19HTML(corte,G,H,n){const d=f19Data(corte,G,H,n);const pc=v=>n2(v*100);const fir=(r,lab)=>{const a=agVig(r,corte);return '<div class="c"><div class="ln"></div><b>'+lab+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';};
+ return '<style>.f19 td,.f19 th{border:1px solid #000;padding:3px 5px;font-size:8.5pt;text-align:center}.f19{width:100%;border-collapse:collapse}.hd{display:flex;justify-content:space-between;font-size:9pt;margin:6px 0}.gg{font-size:9pt;line-height:1.7}.firs{display:flex;flex-wrap:wrap;gap:18px 40px;margin-top:30px}.firs .c{width:46%;font-size:8.5pt}.firs .ln{border-top:1px solid #000;margin-bottom:3px}</style>'+
+  '<h1 style="font-size:12pt">FORMATO N° 19: AUTORIZACIÓN DE GASTOS DEL RESIDENTE</h1>'+
+  '<div class="hd"><span>N°: ____</span><span>CONVENIO N°: '+esc(CFG().conv)+'</span><span>EXPEDIENTE N°: '+esc(CFG().exp)+'</span><span>FECHA: '+fF(corte)+'</span></div>'+
+  '<p style="font-size:8.5pt">La autorización de gastos para el pago del Residente se realizará una vez al mes, posterior a la conformidad del Supervisor de Proyectos al informe mensual respectivo.</p>'+
+  '<div class="gg"><b>COEFICIENTE DE PARTICIPACIÓN:</b> '+n2(d.coef)+' &nbsp;&nbsp;&nbsp; <b>MES:</b> '+esc(MESU(d.mes))+'<br>'+
+  '<b>DÍAS POR ASISTIR EN EL MES:</b> '+d.G+' (G) &nbsp;&nbsp;&nbsp; <b>DÍAS DE RETRASO EN LA PRESENTACIÓN DEL INFORME:</b> '+d.n+' (n)<br>'+
+  '<b>DÍAS ASISTIDOS (*):</b> '+d.H+' (H) &nbsp;&nbsp;&nbsp; <b>FACTOR DE ASISTENCIA:</b> '+n2(d.C)+'  C = H/G<br><i>(*) Verificados en Cuaderno de Obra</i></div>'+
+  '<div style="text-align:center;font-weight:bold;margin:8px 0 2px;font-size:9pt">PAGO QUE SE AUTORIZA</div>'+
+  '<table class="f19"><thead><tr><th>CONCEPTOS</th><th>PRESUPUESTO TOTAL (85%)<br>A</th><th>ACUMULADO AUTORIZADO ANTERIOR</th><th>AVANCE DEL MES %<br>B</th><th>FACTOR DE ASISTENCIA<br>C</th><th>MONTO<br>D = A×B×C</th><th>MORA<br>E = D×n×10/1000</th><th>MONTO NETO<br>F = D−E</th></tr></thead>'+
+  '<tbody><tr><td>GASTOS DEL RESIDENTE</td><td>'+n2(d.A)+'</td><td>'+n2(d.acumAnt)+'</td><td>'+pc(d.B)+' %</td><td>'+n2(d.C)+'</td><td>'+n2(d.D)+'</td><td>'+n2(d.E)+'</td><td>'+n2(d.F)+'</td></tr></tbody></table>'+
+  '<div class="firs">'+fir('ADMIN','ADMINISTRADOR')+fir('TESORERA','TESORERO ORNE')+fir('PRESIDENTE','PRESIDENTE ORNE')+fir('SECRETARIA','SECRETARIO ORNE')+fir('FISCAL','FISCAL ORNE')+fir('SUPERVISOR','V°B° SUPERVISOR DE PROYECTOS')+'</div>'+
+  '<p style="font-size:8pt;margin-top:14px">El Tesorero es responsable de presentar los Comprobantes de Pago en un plazo de 5 días hábiles, contados desde la presente autorización.</p>';}
+function hojaF19(corte,G,H,n){const d=f19Data(corte,G,H,n);const rows=[
+  [{v:'FORMATO N° 19: AUTORIZACIÓN DE GASTOS DEL RESIDENTE',s:4}],
+  [{v:'N°: ____    CONVENIO N°: '+CFG().conv+'    EXPEDIENTE N°: '+CFG().exp+'    FECHA: '+fF(corte),s:0}],[],
+  [{v:'COEFICIENTE DE PARTICIPACIÓN:',s:0},{v:d.coef,s:0},{v:'MES:',s:0},{v:MESU(d.mes),s:0}],
+  [{v:'DÍAS POR ASISTIR (G):',s:0},{v:d.G,s:0},{v:'DÍAS ASISTIDOS (H):',s:0},{v:d.H,s:0},{v:'FACTOR C=H/G:',s:0},{v:d.C,s:0},{v:'DÍAS RETRASO (n):',s:0},{v:d.n,s:0}],[],
+  [{v:'CONCEPTOS',s:1},{v:'PRESUP. TOTAL (85%) A',s:1},{v:'ACUM. AUTORIZ. ANTERIOR',s:1},{v:'AVANCE DEL MES % B',s:1},{v:'FACTOR ASIST. C',s:1},{v:'MONTO D=AxBxC',s:1},{v:'MORA E',s:1},{v:'MONTO NETO F=D-E',s:1}],
+  [{v:'GASTOS DEL RESIDENTE',s:3},{v:d.A,s:2},{v:d.acumAnt,s:2},{v:d.B,s:5},{v:d.C,s:2},{v:d.D,s:2},{v:d.E,s:2},{v:d.F,s:2}]];
+ return{name:'FORMATO 19',frz:0,w:[26,16,16,13,12,15,12,15],rows,merge:['A1:H1','A2:H2']};}
+function modalF19(corte){const mes=corte.slice(0,7);return new Promise(res=>{const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML='<div class="modal"><h3>Formato 19 – '+esc(MESU(mes))+'</h3><p style="font-size:13px;color:var(--sub);margin:0 0 6px">Días laborables del mes (sin domingos ni feriados) y días con asiento del Residente. Edítelos si hace falta.</p>'+
+   '<label class="l">DÍAS POR ASISTIR (G)</label><input id="f19g" class="sel" inputmode="numeric" value="'+diasLaborMes(mes)+'">'+
+   '<label class="l">DÍAS ASISTIDOS (H)</label><input id="f19h" class="sel" inputmode="numeric" value="'+diasResMes(mes)+'">'+
+   '<label class="l">DÍAS DE RETRASO DEL INFORME (n)</label><input id="f19n" class="sel" inputmode="numeric" value="0">'+
+   '<div class="acc" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px"><button class="btn sec" data-c="x">Cancelar</button><button class="btn" data-c="E">Excel</button><button class="btn ok" data-c="P">PDF</button></div></div>';
+  document.body.appendChild(bg);const close=v=>{const G=+bg.querySelector('#f19g').value||0,H=+bg.querySelector('#f19h').value||0,n=+bg.querySelector('#f19n').value||0;bg.remove();res({v,G,H,n});};
+  bg.addEventListener('click',e=>{if(e.target===bg)close('x');const b=e.target.closest('[data-c]');if(b)close(b.dataset.c);});});}
+async function expF19(){if(!PRES)return aviso('Cargue el presupuesto para el Formato 19.');const corte=repCorte();const r=await modalF19(corte);if(r.v!=='E'&&r.v!=='P')return;
+ if(r.v==='P'){imprimir(docHTML('Formato 19','portrait',f19HTML(corte,r.G,r.H,r.n)));return;}
+ try{pickGuardar(await libroXlsx([hojaF19(corte,r.G,r.H,r.n)]),'Formato19_Residente_'+corte.slice(0,7)+'.xlsx');}catch(e){aviso(e.message);}}
 
 // ---------- inicio ----------
 if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
