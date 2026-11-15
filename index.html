@@ -137,7 +137,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.5.1';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.5.2';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -945,7 +945,7 @@ function vAlmacen(){if(!CI().length){app.innerHTML=bar('ALMACÉN','Sin catálogo
 function formMov(tipo,f0){const al=AL();const dl=CI().map(x=>'<option value="'+esc(x.ins)+'" data-cod="'+x.cod+'" data-u="'+esc(x.u)+'">').join('');
  const parts=DB[almObra].caps.map(c=>c.p.map(p=>'<option value="'+p.i+' '+esc(p.d)+'">').join('')).join('');
  app.innerHTML=bar(tipo==='ING'?'REGISTRAR INGRESO':'REGISTRAR SALIDA',OBRAS.find(o=>o.k===almObra).n,true)+'<main><div class="card">'+
-  '<label class="l">OBRA</label><select id="mvO" class="sel">'+OBRAS.map(o=>'<option value="'+o.k+'"'+(o.k===almObra?' selected':'')+'>'+esc(o.n)+'</option>').join('')+'</select>'+
+  '<label class="l">OBRA</label><select id="mvO" class="sel" onchange="mvAuto()">'+OBRAS.map(o=>'<option value="'+o.k+'"'+(o.k===almObra?' selected':'')+'>'+esc(o.n)+'</option>').join('')+'</select>'+
   '<label class="l">FECHA</label><div class="fecha"><input type="date" id="mvF" value="'+(f0||fechaDefecto())+'" min="'+INICIO+'" max="'+maxFecha()+'"></div>'+
   '<label class="l">INSUMO</label><input id="mvIns" class="sel" list="mvDL" placeholder="Escriba o elija" oninput="mvAuto()"><datalist id="mvDL">'+dl+'</datalist>'+
   '<div id="mvInfo" class="prev" style="text-align:left"></div>'+
@@ -954,7 +954,7 @@ function formMov(tipo,f0){const al=AL();const dl=CI().map(x=>'<option value="'+e
   '<div id="mvErr"></div><div class="acc"><button class="btn sec" onclick="history.back()">CANCELAR</button><button class="btn ok" onclick="guardarMov(\''+tipo+'\')">GUARDAR</button></div></div></main>';
  window._mvTipo=tipo;}
 function mvAuto(){const inp=$('#mvIns');const o=[...$('#mvDL').options].find(x=>x.value.toLowerCase()===inp.value.trim().toLowerCase());const info=$('#mvInfo');const obra=$('#mvO').value;
- if(o){const cod=o.dataset.cod;const s=saldoCod(cod,obra);info.innerHTML='Código '+cod+' · unidad '+esc(o.dataset.u)+' · <b>saldo actual: '+n3(s)+'</b>';}else info.textContent='';}
+ if(o){const cod=o.dataset.cod,ing=ingCod(cod,obra),sal=salCod(cod,obra),s=ing-sal;info.innerHTML='Código '+cod+' · '+esc(o.dataset.u)+'<br>Comprado (ingresado): <b>'+n3(ing)+'</b><br>Con salida: <b>'+n3(sal)+'</b><br><b>Saldo por dar salida: '+n3(s)+'</b>';}else info.innerHTML='';}
 function guardarMov(tipo){const o=$('#mvO').value,f=$('#mvF').value,nom=$('#mvIns').value.trim(),c=parseFloat(($('#mvC').value||'').replace(',','.')),e=$('#mvErr');e.innerHTML='';const er=m=>{e.innerHTML='<div class="err-msg">⛔ '+m+'</div>';vibrar();};
  if(!/^\d{4}-\d\d-\d\d$/.test(f))return er('Elija la fecha.');if(!nom)return er('Elija el insumo.');if(!(c>0))return er('Escriba una cantidad válida.');
  const ix=insByNom(nom);const cod=ix?ix.cod:'';const u=ix?ix.u:'';
