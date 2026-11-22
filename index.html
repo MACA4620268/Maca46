@@ -147,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.2';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.3';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -358,11 +358,10 @@ function hojaDetalle(){const M=!!PRES;const rows=[[{v:'DETALLE DIARIO DE METRADO
     const row=[{v:fF(r.f),s:8},{v:(OBRAS.find(o=>o.k===r.o)||{n:r.o}).n,s:8},{v:r.i,s:8},{v:p.d,s:3},{v:p.u,s:8},{v:r.qc/100,s:2}];if(M)row.push({v:Math.round(p.s*r.qc/p.mc*100)/100,s:2});row.push({v:r.obs||'',s:3});rows.push(row);});
   if(S.regs.length===0)rows.push(['(sin registros)']);
   return{name:'DETALLE DIARIO',frz:4,w:M?[11,11,7,55,6,11,12,30]:[11,11,7,55,6,11,30],rows};}
-async function exportarExcel(){try{const blob=await libroXlsx([...OBRAS.map(hojaObra),hojaDetalle()].concat(CU().as.length?[hojaCuaderno()]:[]));const nombre='Avance_Obra_'+hoy()+'.xlsx';
-  const v=await modal('<h3>Excel listo</h3><p>'+nombre+'<br><small>Hojas: '+OBRAS.map(o=>esc(o.n)).join(', ')+', DETALLE DIARIO'+(CU().as.length?' y CUADERNO DE OBRA':'')+'.</small></p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');
-  if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}catch(e){aviso('No se pudo generar el Excel: '+e.message);}}
+async function exportarExcel(){try{const blob=await libroXlsx([...OBRAS.map(hojaObra),hojaDetalle()].concat(CU().as.length?[hojaCuaderno()]:[]));compartirArchivo(blob,'Avance_Obra_'+hoy()+'.xlsx');}catch(e){aviso('No se pudo generar el Excel: '+e.message);}}
 function descargar(blob,nombre){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);toast('Guardado en Descargas: '+nombre);}
-function compartirArchivo(blob,nombre){try{const f=new File([blob],nombre,{type:blob.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:nombre}).catch(()=>{});return;}}catch(e){}descargar(blob,nombre);}
+// Compartir directo: abre el menú del sistema (WhatsApp, correo, Drive…). Si no está disponible o falla, guarda en Descargas. Si el usuario cancela, no hace nada.
+async function compartirArchivo(blob,nombre){try{const f=new File([blob],nombre,{type:blob.type||'application/octet-stream'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:nombre});return;}}catch(e){if(e&&(e.name==='AbortError'||/abort|cancel|cancelaci/i.test(e.message||'')))return;}descargar(blob,nombre);}
 // ---------- Respaldo ----------
 function vBienvenida(){app.innerHTML=bar('AVANCE DE OBRA','Registro diario de metrados',false)+'<main><div class="card" style="text-align:center"><div style="font-size:44px">📋</div><h2 style="color:var(--az);margin:6px 0">Bienvenido</h2>'+
   '<p>Para empezar, cargue el <b>archivo de la obra</b> (.json) que tiene guardado en su celular.</p><p class="prev" style="text-align:center">Los datos de la obra se guardan solo en este celular. No se envían a internet.</p>'+
@@ -845,7 +844,7 @@ async function expMatriz(pdf){const corte=repCorte();if(pdf){imprimir(matrizHTML
 async function expVal(modo){const corte=repCorte();if(!PRES)return aviso('Cargue el presupuesto para generar la valorización.');
  if(modo==='P'){imprimir(docHTML('Valorización F18','landscape',valHTML18(corte)+'<div style="page-break-after:always"></div>'+valTotalHTML(corte)));return;}
  try{const blob=await libroXlsx([hojaVal18(corte)]);pickGuardar(blob,'Valorizacion_F18_al_'+corte+'.xlsx');}catch(e){aviso('No se pudo generar: '+e.message);}}
-async function pickGuardar(blob,nombre){const v=await modal('<h3>Archivo listo</h3><p>'+esc(nombre)+'</p><div class="btns"><button class="btn" data-v="sh">Compartir</button><button class="btn sec" data-v="dl">Guardar en el celular</button></div>');if(v==='sh')compartirArchivo(blob,nombre);else if(v==='dl')descargar(blob,nombre);}
+async function pickGuardar(blob,nombre){return compartirArchivo(blob,nombre);}
 
 
 // ===== Valorización F18 en una sola hoja (Azángaro arriba, Umachiri abajo, TOTAL OBRA) =====
