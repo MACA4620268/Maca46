@@ -147,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.4';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.5';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -810,9 +810,9 @@ function valHTMLobra(k,corte){const {filas,T}=valObra(k,corte),mes=corte.slice(0
   '<td class="n">'+(f.acuM?n2(f.acuM):'')+'</td><td class="n">'+(f.acuV?n2(f.acuV):'')+'</td><td class="n">'+pc(f.acuV,f.presup)+'</td>'+
   '<td class="n">'+n2(f.salM)+'</td><td class="n">'+n2(f.salV)+'</td><td class="n">'+pc(f.salV,f.presup)+'</td></tr>').join('');
  const tot='<tr class="t"><td colspan="5">COSTO DIRECTO / TOTAL</td><td class="n">'+n2(T.presup)+'</td><td></td><td class="n">'+n2(T.antV)+'</td><td class="n">'+pc(T.antV,T.presup)+'</td><td></td><td class="n">'+n2(T.actV)+'</td><td class="n">'+pc(T.actV,T.presup)+'</td><td></td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+pc(T.acuV,T.presup)+'</td><td></td><td class="n">'+n2(T.salV)+'</td><td class="n">'+pc(T.salV,T.presup)+'</td></tr>';
- return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc((OBRAS.find(o=>o.k===k)||{n:k}).n)+' · Correspondiente al mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+ return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc((OBRAS.find(o=>o.k===k)||{n:k}).n)+' · Valorización Nº ____ · Correspondiente al mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · Fecha de presentación: __________</div>'+
   '<table class="g"><thead><tr><th rowspan="2">PARTIDA</th><th rowspan="2" class="l">DESCRIPCIÓN</th><th colspan="4">PRESUPUESTO</th><th colspan="3">ANTERIOR</th><th colspan="3">ACTUAL</th><th colspan="3">ACUMULADO</th><th colspan="3">SALDO</th></tr>'+
-  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML(['ADMINISTRADOR','RESIDENTE','SUPERVISOR'],corte);}
+  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML([['ADMINISTRADOR','ADMINISTRADOR'],['RESIDENTE','RESIDENTE'],['SUPERVISOR','SUPERVISOR DE PROYECTOS']],corte);}
 function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));let gp=0,ga=0;
  let rows=t.map(x=>{gp+=x.v.presup;ga+=x.v.acuV;return '<tr><td class="l">'+esc(x.o.n)+'</td><td class="n">'+n2(x.v.presup)+'</td><td class="n">'+n2(x.v.acuV)+'</td><td class="n">'+n2(x.v.presup-x.v.acuV)+'</td><td class="n">'+(x.v.presup?n2(x.v.acuV/x.v.presup*100,2):'0.00')+'</td></tr>';}).join('');
  rows+='<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+n2(gp-ga)+'</td><td class="n">'+(gp?n2(ga/gp*100,2):'0.00')+'</td></tr>';
@@ -821,8 +821,8 @@ function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));
   '<table class="g"><thead><tr><th class="l">COMPONENTE</th><th>PRESUPUESTO</th><th>VALORIZADO</th><th>SALDO</th><th>% AVANCE</th></tr></thead><tbody>'+rows+'</tbody></table>'+
   '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct,2)+' %</div>';}
 function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',SECRETARIO:'SECRETARIA',FISCAL:'FISCAL',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
- return '<div class="fir">'+roles.map(r=>{const a=agVig(n[r]||r,corte);return '<div><div class="ln"></div><b>'+esc(r)+'</b><div>'+esc(a?a.nom:'')+'</div><div>'+(a&&a.dni?'DNI '+a.dni:'')+'</div></div>';}).join('')+'</div>';}
-function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}.hl{background:#f8cbad}.ac{background:#c6efce}table.g.mat th{font-size:6.5pt;padding:1px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
+ return '<div class="fir">'+roles.map(r=>{const key=Array.isArray(r)?r[0]:r,lab=Array.isArray(r)?r[1]:r;const a=agVig(n[key]||key,corte);return '<div class="fc"><div class="sp"></div><div class="ln"></div><b>'+esc(lab)+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';}).join('')+'</div>';}
+function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;flex-wrap:wrap;justify-content:space-around;margin-top:16px;text-align:center;font-size:8.5pt}.fir .fc{padding:0 4px;margin-bottom:12px;page-break-inside:avoid}.fir .sp{height:30mm}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}.hl{background:#f8cbad}.ac{background:#c6efce}table.g.mat th{font-size:6.5pt;padding:1px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
 function imprimir(html){const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();return;}
  const f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);const d=f.contentWindow.document;d.open();d.write(html);d.close();setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print();}catch(e){}setTimeout(()=>f.remove(),2000);},600);}
 // ---- Hub de reportes ----
@@ -877,9 +877,9 @@ function valHTML18(corte){const mes=corte.slice(0,7),pc=(v,b)=>b?n2(v/b*100,2):'
   body+='<tr class="t"><td colspan="5">SUBTOTAL '+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td></td><td class="n">'+n2(T.antV)+'</td><td class="n">'+pc(T.antV,T.presup)+'</td><td></td><td class="n">'+n2(T.actV)+'</td><td class="n">'+pc(T.actV,T.presup)+'</td><td></td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+pc(T.acuV,T.presup)+'</td><td></td><td class="n">'+n2(T.salV)+'</td><td class="n">'+pc(T.salV,T.presup)+'</td></tr>';
   G.presup+=T.presup;G.antV+=T.antV;G.actV+=T.actV;G.acuV+=T.acuV;G.salV+=T.salV;});
  const tot='<tr class="t" style="background:#cfe0ef"><td colspan="5">TOTAL OBRA</td><td class="n">'+n2(G.presup)+'</td><td></td><td class="n">'+n2(G.antV)+'</td><td class="n">'+pc(G.antV,G.presup)+'</td><td></td><td class="n">'+n2(G.actV)+'</td><td class="n">'+pc(G.actV,G.presup)+'</td><td></td><td class="n">'+n2(G.acuV)+'</td><td class="n">'+pc(G.acuV,G.presup)+'</td><td></td><td class="n">'+n2(G.salV)+'</td><td class="n">'+pc(G.salV,G.presup)+'</td></tr>';
- return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc(TIT||'')+' · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+ return '<h1>FORMATO N° 18: VALORIZACIÓN DE AVANCE DE INTERVENCIÓN</h1><div class="sub">'+esc(TIT||'')+' · Valorización Nº ____ · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · Fecha de presentación: __________</div>'+
   '<table class="g"><thead><tr><th rowspan="2">PARTIDA</th><th rowspan="2" class="l">DESCRIPCIÓN</th><th colspan="4">PRESUPUESTO</th><th colspan="3">ANTERIOR</th><th colspan="3">ACTUAL</th><th colspan="3">ACUMULADO</th><th colspan="3">SALDO</th></tr>'+
-  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML(['ADMINISTRADOR','RESIDENTE','SUPERVISOR'],corte);}
+  '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML([['ADMINISTRADOR','ADMINISTRADOR'],['RESIDENTE','RESIDENTE'],['SUPERVISOR','SUPERVISOR DE PROYECTOS']],corte);}
 
 
 // ========== v3.2: Almacén (catálogo, ingresos, salidas, Formatos 9 y 10) ==========
@@ -993,7 +993,7 @@ function f9HTML(corte){let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td c
  if(!body)body='<tr><td colspan="7">Sin movimientos.</td></tr>';
  return '<h1>FORMATO N° 9: CUADRO DE MOVIMIENTO DIARIO DE ALMACÉN</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · al '+fF(corte)+'</div>'+
   '<table class="g"><thead><tr><th rowspan="2">FECHA</th><th rowspan="2" class="l">MATERIAL/HERRAMIENTA</th><th rowspan="2">UNIDAD</th><th colspan="2">ENTRADA</th><th colspan="2">SALIDA</th></tr><tr><th>Proveedor</th><th>Cantidad</th><th>Partida</th><th>Cantidad</th></tr></thead><tbody>'+body+'</tbody></table>'+
-  firmasHTML(['PRESIDENTE','TESORERO','RESIDENTE'],corte);}
+  firmasHTML([['PRESIDENTE','PRESIDENTE ORNE'],['TESORERO','TESORERO ORNE'],['RESIDENTE','V°B° RESIDENTE']],corte);}
 // ---- Formato 10 (resumen) ----
 function hojaF10(corte){const rows=[[{v:'FORMATO N° 10: CUADRO RESUMEN DE MOVIMIENTO DE ALMACÉN',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp+'   (al '+fF(corte)+')',s:0}],[],
   ['N°','MATERIAL/HERRAMIENTA','UNIDAD','PRESUP.','ENTRADA (acum.)','SALIDA (acum.)','SALDO'].map(h=>({v:h,s:1}))];
@@ -1007,9 +1007,9 @@ function f10HTML(corte){let body='';OBRAS.forEach(o=>{body+='<tr class="ob"><td 
    const sal=AL().mov.filter(m=>m.tipo==='SAL'&&m.cod===x.cod&&m.obra===o.k&&m.f<=corte).reduce((s,m)=>s+m.cant,0);
    if(ing===0&&sal===0)return;n++;body+='<tr><td>'+n+'</td><td class="l">'+esc(x.ins)+'</td><td>'+esc(x.u)+'</td><td class="n">'+n3(presuCod(x.cod,o.k))+'</td><td class="n">'+n3(ing)+'</td><td class="n">'+n3(sal)+'</td><td class="n">'+n3(ing-sal)+'</td></tr>';});});
  if(!body)body='<tr><td colspan="7">Sin movimientos.</td></tr>';
- return '<h1>FORMATO N° 10: CUADRO RESUMEN DE MOVIMIENTO DE ALMACÉN</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · al '+fF(corte)+'</div>'+
+ return '<h1>FORMATO N° 10: CUADRO RESUMEN DE MOVIMIENTO DE ALMACÉN</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · al '+fF(corte)+'</div>'+
   '<table class="g"><thead><tr><th>N°</th><th class="l">MATERIAL/HERRAMIENTA</th><th>UNIDAD</th><th>PRESUP.</th><th>ENTRADA (acum.)</th><th>SALIDA (acum.)</th><th>SALDO</th></tr></thead><tbody>'+body+'</tbody></table>'+
-  firmasHTML(['PRESIDENTE','TESORERO','RESIDENTE'],corte);}
+  firmasHTML([['PRESIDENTE','PRESIDENTE ORNE'],['TESORERO','TESORERO ORNE'],['RESIDENTE','V°B° RESIDENTE']],corte);}
 async function expF9(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 9','landscape',f9HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF9(corte)]),'Formato9_Almacen_al_'+corte+'.xlsx');}catch(e){aviso(e.message);}}
 async function expF10(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 10','landscape',f10HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF10(corte)]),'Formato10_Almacen_al_'+corte+'.xlsx');}catch(e){aviso(e.message);}}
 
@@ -1048,7 +1048,7 @@ function f15HTML(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filt
  if(!ob.length)body='<tr><td colspan="12">Sin asistencia registrada en la semana.</td></tr>';
  return '<h1>FORMATO N° 15: HOJA DE TAREO</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · Semana N° '+semNum(corte)+' · del '+fF(dias[0])+' al '+fF(dias[6])+'</div>'+
   '<table class="g"><thead><tr><th>N°</th><th class="l">NOMBRE Y APELLIDOS</th><th>CATEGORÍA</th><th>DOC. IDENTIDAD</th>'+LETSEM.map(l=>'<th>'+l+'</th>').join('')+'<th>TOTAL DÍAS</th></tr></thead><tbody>'+body+'</tbody></table>'+
-  firmasHTML(['RESIDENTE','ADMINISTRADOR','PRESIDENTE','SECRETARIO','FISCAL','TESORERO','SUPERVISOR'],corte);}
+  firmasHTML([['RESIDENTE','RESIDENTE'],['ADMINISTRADOR','ADMINISTRADOR'],['PRESIDENTE','PRESIDENTE ORNE'],['SECRETARIO','SECRETARIO ORNE'],['FISCAL','FISCAL ORNE'],['TESORERO','TESORERO ORNE'],['SUPERVISOR','V°B° SUPERVISOR DE PROYECTOS']],corte);}
 // ---- Formato 16: Jornales ----
 function hojaF16(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filter(a=>diasTrab(a,dias)>0),J=CFG().jornal;
  const rows=[[{v:'FORMATO N° 16: HOJA DE JORNALES',s:4}],[{v:'Convenio N°: '+CFG().conv+'   Expediente N°: '+CFG().exp,s:0}],
@@ -1061,9 +1061,9 @@ function f16HTML(corte){const dias=semanaDias(corte),ob=obrerosVig(dias[6]).filt
  let body=ob.map((a,i)=>{const d=diasTrab(a,dias),j=J[a.cat]||0,tot=Math.round(d*j*100)/100;T+=tot;return '<tr><td>'+(i+1)+'</td><td class="l">'+esc(a.nom)+'</td><td>'+catN(a.cat)+'</td><td>'+genN(a.gen)+'</td><td>'+esc(a.dni||'')+'</td><td class="n">'+d+'</td><td class="n">'+n2(j)+'</td><td class="n">'+n2(tot)+'</td></tr>';}).join('');
  if(!ob.length)body='<tr><td colspan="8">Sin asistencia registrada en la semana.</td></tr>';
  const tot='<tr class="t"><td colspan="7">TOTAL A PAGAR</td><td class="n">'+n2(T)+'</td></tr>';
- return '<h1>FORMATO N° 16: HOJA DE JORNALES</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Semana N° '+semNum(corte)+' · del '+fF(dias[0])+' al '+fF(dias[6])+'</div>'+
+ return '<h1>FORMATO N° 16: HOJA DE JORNALES</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+' · Semana N° '+semNum(corte)+' · del '+fF(dias[0])+' al '+fF(dias[6])+'</div>'+
   '<table class="g"><thead><tr><th>N°</th><th class="l">NOMBRE Y APELLIDOS</th><th>CATEGORÍA</th><th>GÉNERO</th><th>DOC. IDENTIDAD</th><th>DÍAS</th><th>JORNAL (S/)</th><th>TOTAL (S/)</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+
-  firmasHTML(['RESIDENTE','ADMINISTRADOR','TESORERO','PRESIDENTE','SECRETARIO','FISCAL','SUPERVISOR'],corte);}
+  firmasHTML([['RESIDENTE','RESIDENTE'],['ADMINISTRADOR','ADMINISTRADOR'],['TESORERO','TESORERO ORNE'],['PRESIDENTE','PRESIDENTE ORNE'],['SECRETARIO','SECRETARIO ORNE'],['FISCAL','FISCAL ORNE'],['SUPERVISOR','V°B° SUPERVISOR DE PROYECTOS']],corte);}
 async function expF15(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 15','landscape',f15HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF15(corte)]),'Formato15_Tareo_sem'+semNum(corte)+'.xlsx');}catch(e){aviso(e.message);}}
 async function expF16(modo){const corte=repCorte();if(modo==='P'){imprimir(docHTML('Formato 16','landscape',f16HTML(corte)));return;}try{pickGuardar(await libroXlsx([hojaF16(corte)]),'Formato16_Jornales_sem'+semNum(corte)+'.xlsx');}catch(e){aviso(e.message);}}
 
@@ -1109,13 +1109,22 @@ function asientoPDF(a){const body='<div style="text-align:right;font-size:10pt">
 // ---- Informe mensual (Formato 33) – carátula/índice con avance ----
 function informe33(corte){const mes=corte.slice(0,7);let gp=0,ga=0;const fil=OBRAS.map(o=>{const T=valObra(o.k,corte).T;gp+=T.presup;ga+=T.acuV;return '<tr><td class="l">'+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+(T.presup?n2(T.acuV/T.presup*100,2):'0.00')+'</td></tr>';}).join('');
  const pl=plazo();
- const body='<h1>INFORME MENSUAL DEL RESIDENTE (FORMATO N° 33)</h1><div class="sub">'+esc(TIT2||TIT)+' · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
+ const _sup=agVig('SUPERVISOR',corte),_res=agVig('RESIDENTE',corte),_yy=corte.slice(0,4);
+ const body='<h1 style="font-size:12pt">INFORME MENSUAL DEL RESIDENTE</h1><div class="sub" style="margin-bottom:4px">Formato N° 33</div>'+
+  '<table style="width:100%;font-size:9pt;border-collapse:collapse;margin:4px 0 10px"><tbody>'+
+  '<tr><td style="width:30mm;padding:2px 4px;font-weight:bold;vertical-align:top">INFORME N°:</td><td style="padding:2px 4px">________-'+_yy+'-NE-MACA / RESIDENTE</td></tr>'+
+  '<tr><td style="padding:2px 4px;font-weight:bold;vertical-align:top">A:</td><td style="padding:2px 4px">'+esc(_sup?_sup.nom:'')+' — Supervisor de Proyectos</td></tr>'+
+  '<tr><td style="padding:2px 4px;font-weight:bold;vertical-align:top">DE:</td><td style="padding:2px 4px">'+esc(_res?_res.nom:'')+' — Residente de Obra</td></tr>'+
+  '<tr><td style="padding:2px 4px;font-weight:bold;vertical-align:top">ASUNTO:</td><td style="padding:2px 4px">Informe mensual del residente – Mes de '+esc(MESU(mes))+'</td></tr>'+
+  '<tr><td style="padding:2px 4px;font-weight:bold;vertical-align:top">REFERENCIA:</td><td style="padding:2px 4px">'+esc(TIT2||TIT)+' · Convenio N° '+esc(CFG().conv)+' · Expediente N° '+esc(CFG().exp)+'</td></tr>'+
+  '<tr><td style="padding:2px 4px;font-weight:bold;vertical-align:top">FECHA:</td><td style="padding:2px 4px">'+fF(corte)+'</td></tr>'+
+  '</tbody></table>'+
   '<h2 style="font-size:11pt;color:#1d5a96">1. Avance físico y financiero</h2>'+
   '<table class="g"><thead><tr><th class="l">OBRA</th><th>PRESUPUESTO</th><th>VALORIZADO ACUM.</th><th>% AVANCE</th></tr></thead><tbody>'+fil+'<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+(gp?n2(ga/gp*100,2):'0.00')+'</td></tr></tbody></table>'+
   '<p>Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct,2)+' %. Avance financiero acumulado: '+(gp?n2(ga/gp*100,2):'0.00')+' %.</p>'+
   '<h2 style="font-size:11pt;color:#1d5a96">2. Anexos que se adjuntan</h2><ul style="font-size:10pt"><li>Valorización de Avance (Formato N° 18)</li><li>Hoja de Tareo (Formato N° 15) y Hoja de Jornales (Formato N° 16)</li><li>Movimiento de Almacén (Formatos N° 9 y 10)</li><li>Copia de los asientos del Cuaderno de Obra del mes</li><li>Panel fotográfico</li></ul>'+
   '<h2 style="font-size:11pt;color:#1d5a96">3. Comentario del Residente</h2><p style="min-height:60px">____________________________________________________________</p>'+
-  firmasHTML(['RESIDENTE','SUPERVISOR'],corte);
+  firmasHTML([['RESIDENTE','RESIDENTE'],['SUPERVISOR','V°B° SUPERVISOR DE PROYECTOS']],corte);
  imprimir(docHTML('Informe mensual','portrait',body));}
 
 
@@ -1127,8 +1136,8 @@ function f19Data(corte,G,H,n){const mes=corte.slice(0,7),first=mes+'-01';const A
  const B=presup?actV/presup:0,C=G?H/G:0,D=Math.round(A*B*C*100)/100,E=Math.round(D*n*10/1000*100)/100,F=Math.round((D-E)*100)/100;
  const acumAnt=Math.round(A*coef*(presup?antAcuV/presup:0)*100)/100;
  return {mes,A,coef,G,H,n,C,B,acumAnt,D,E,F};}
-function f19HTML(corte,G,H,n){const d=f19Data(corte,G,H,n);const pc=v=>n2(v*100,2);const fir=(r,lab)=>{const a=agVig(r,corte);return '<div class="c"><div class="ln"></div><b>'+lab+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';};
- return '<style>.f19 td,.f19 th{border:1px solid #000;padding:3px 5px;font-size:8.5pt;text-align:center}.f19{width:100%;border-collapse:collapse}.hd{display:flex;justify-content:space-between;font-size:9pt;margin:6px 0}.gg{font-size:9pt;line-height:1.7}.firs{display:flex;flex-wrap:wrap;gap:18px 40px;margin-top:30px}.firs .c{width:46%;font-size:8.5pt}.firs .ln{border-top:1px solid #000;margin-bottom:3px}</style>'+
+function f19HTML(corte,G,H,n){const d=f19Data(corte,G,H,n);const pc=v=>n2(v*100,2);const fir=(r,lab)=>{const a=agVig(r,corte);return '<div class="c"><div class="sp"></div><div class="ln"></div><b>'+lab+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';};
+ return '<style>.f19 td,.f19 th{border:1px solid #000;padding:3px 5px;font-size:8.5pt;text-align:center}.f19{width:100%;border-collapse:collapse}.hd{display:flex;justify-content:space-between;font-size:9pt;margin:6px 0}.gg{font-size:9pt;line-height:1.7}.firs{display:flex;flex-wrap:wrap;gap:18px 40px;margin-top:20px}.firs .c{width:46%;font-size:8.5pt;page-break-inside:avoid}.firs .sp{height:30mm}.firs .ln{border-top:1px solid #000;margin-bottom:3px}</style>'+
   '<h1 style="font-size:12pt">FORMATO N° 19: AUTORIZACIÓN DE GASTOS DEL RESIDENTE</h1>'+
   '<div class="hd"><span>N°: ____</span><span>CONVENIO N°: '+esc(CFG().conv)+'</span><span>EXPEDIENTE N°: '+esc(CFG().exp)+'</span><span>FECHA: '+fF(corte)+'</span></div>'+
   '<p style="font-size:8.5pt">La autorización de gastos para el pago del Residente se realizará una vez al mes, posterior a la conformidad del Supervisor de Proyectos al informe mensual respectivo.</p>'+
