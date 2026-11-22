@@ -147,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.1';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.2';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -779,7 +779,9 @@ function valObra(k,corte){const mes=corte.slice(0,7),first=mes+'-01';let T={pres
   const antM=S.regs.filter(x=>x.o===k&&x.i===p.i&&x.f<first).reduce((s,x)=>s+x.qc,0)/100;
   const actM=S.regs.filter(x=>x.o===k&&x.i===p.i&&x.f>=first&&x.f<=corte).reduce((s,x)=>s+x.qc,0)/100;
   const acuM=antM+actM,salM=p.m-acuM;
-  const f={i:p.i,d:p.d,u:p.u,metT:p.m,pu,presup,antM,antV:antM*pu,actM,actV:actM*pu,acuM,acuV:acuM*pu,salM,salV:salM*pu};
+  // valorizado atado al parcial del presupuesto (no a metrado×PU): al 100% cuadra exacto y el saldo cierra en 0
+  const acuV=presup*Math.min(1,p.m?acuM/p.m:0),antV=presup*Math.min(1,p.m?antM/p.m:0);
+  const f={i:p.i,d:p.d,u:p.u,metT:p.m,pu,presup,antM,antV,actM,actV:acuV-antV,acuM,acuV,salM,salV:presup-acuV};
   T.presup+=presup;T.antV+=f.antV;T.actV+=f.actV;T.acuV+=f.acuV;T.salV+=f.salV;filas.push(f);}));
  return{filas,T};}
 function hojaVal(k,corte){const {filas,T}=valObra(k,corte);const mes=corte.slice(0,7);
