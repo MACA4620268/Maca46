@@ -147,7 +147,7 @@ table.res tr.done td.s{color:var(--ok);font-weight:700}
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.3';
+const KEY='avobra_regs', KOBRA='avobra_obra', KPIN='avobra_pin', VERSION='3.6.4';
 const DIAS=['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 // ---------- datos de la obra (se cargan desde un archivo privado, solo en este celular) ----------
 let OB=null,DB={},OBRAS=[],INICIO='',FIN='',PLAZO=0,TIT='',TIT2='',P={},PRES=null;
@@ -168,7 +168,7 @@ const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)
 const fF=iso=>iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'';
 const diaSem=iso=>DIAS[new Date(iso+'T12:00:00').getDay()];
 const diffD=(a,b)=>Math.round((Date.parse(b+'T12:00:00')-Date.parse(a+'T12:00:00'))/864e5);
-const n2=(x,d=2)=>Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const n2=(x,d=3)=>Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const sol=x=>'S/ '+n2(x);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const und=u=>({M2:'m²',M3:'m³',ML:'ml'}[u]||u.toLowerCase());
@@ -327,7 +327,7 @@ async function libroXlsx(hojas){const z=new JSZip();
   z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
   z.file('xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+hojas.map((h,i)=>'<sheet name="'+xesc(h.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+'</sheets></workbook>');
   z.file('xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+hojas.map((h,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+'<Relationship Id="rId'+(hojas.length+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.00"/><numFmt numFmtId="165" formatCode="0.00%"/></numFmts>'+
+  z.file('xl/styles.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.000"/><numFmt numFmtId="165" formatCode="0.00%"/></numFmts>'+
    '<fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font></fonts>'+
    '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1D5A96"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8EEF4"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF8CBAD"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFC6EFCE"/><bgColor indexed="64"/></patternFill></fill></fills>'+
    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFB0B8C0"/></left><right style="thin"><color rgb="FFB0B8C0"/></right><top style="thin"><color rgb="FFB0B8C0"/></top><bottom style="thin"><color rgb="FFB0B8C0"/></bottom><diagonal/></border></borders>'+
@@ -768,7 +768,7 @@ function matrizHTML(corte){const dias=diasRango(corte);
  const h2=dias.map(f=>'<th class=\"'+(esHl(f)?'hl':'')+'\">'+(+f.slice(8,10))+'</th>').join('');
  let body='';OBRAS.forEach(o=>{body+='<tr class=\"ob\"><td colspan=\"'+(7+dias.length)+'\">'+esc(o.n)+'</td></tr>';
   DB[o.k].caps.forEach(c=>c.p.forEach(p=>{let acu=0;const dc=dias.map(f=>{const q=qDia(o.k,p.i,f);acu+=q;return '<td class=\"n '+(esHl(f)?'hl':'')+'\">'+(q?n2(q/100):'')+'</td>';}).join('');
-   body+='<tr><td>'+p.i+'</td><td class=\"l\">'+esc(p.d)+'</td><td>'+esc(und(p.u))+'</td><td class=\"n\">'+n2(p.m)+'</td>'+dc+'<td class=\"n ac\">'+n2(acu/100)+'</td><td class=\"n\">'+n2((p.mc-acu)/100)+'</td><td class=\"n\">'+n2(p.mc?acu/p.mc*100:0)+'</td></tr>';}));});
+   body+='<tr><td>'+p.i+'</td><td class=\"l\">'+esc(p.d)+'</td><td>'+esc(und(p.u))+'</td><td class=\"n\">'+n2(p.m)+'</td>'+dc+'<td class=\"n ac\">'+n2(acu/100)+'</td><td class=\"n\">'+n2((p.mc-acu)/100)+'</td><td class=\"n\">'+n2(p.mc?acu/p.mc*100:0,2)+'</td></tr>';}));});
  return docHTML('Metrado diario','landscape',
   '<h1>METRADO DIARIO – del '+fF(INICIO)+' al '+fF(dias[dias.length-1])+'</h1><div class=\"sub\">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+'</div>'+
   '<table class=\"g mat\"><thead><tr>'+h1+'</tr><tr>'+h2+'</tr></thead><tbody>'+body+'</tbody></table>');}
@@ -803,7 +803,7 @@ function hojaVal(k,corte){const {filas,T}=valObra(k,corte);const mes=corte.slice
  const merge=['A1:R1','A2:R2','A3:R3','C5:F5','G5:I5','J5:L5','M5:O5','P5:R5','A5:A6','B5:B6'];
  return{name:'F18 '+k,frz:6,frzX:2,w:[9,42,6,10,9,12,10,12,7,10,12,7,10,12,7,10,12,7],rows,merge};}
 const esc0=u=>und(u);
-function valHTMLobra(k,corte){const {filas,T}=valObra(k,corte),mes=corte.slice(0,7);const pc=(v,b)=>b?n2(v/b*100):'0.00';
+function valHTMLobra(k,corte){const {filas,T}=valObra(k,corte),mes=corte.slice(0,7);const pc=(v,b)=>b?n2(v/b*100,2):'0.00';
  let body=filas.map(f=>'<tr><td>'+f.i+'</td><td class="l">'+esc(f.d)+'</td><td>'+esc(und(f.u))+'</td><td class="n">'+n2(f.metT)+'</td><td class="n">'+n2(f.pu)+'</td><td class="n">'+n2(f.presup)+'</td>'+
   '<td class="n">'+(f.antM?n2(f.antM):'')+'</td><td class="n">'+(f.antV?n2(f.antV):'')+'</td><td class="n">'+pc(f.antV,f.presup)+'</td>'+
   '<td class="n">'+(f.actM?n2(f.actM):'')+'</td><td class="n">'+(f.actV?n2(f.actV):'')+'</td><td class="n">'+pc(f.actV,f.presup)+'</td>'+
@@ -814,12 +814,12 @@ function valHTMLobra(k,corte){const {filas,T}=valObra(k,corte),mes=corte.slice(0
   '<table class="g"><thead><tr><th rowspan="2">PARTIDA</th><th rowspan="2" class="l">DESCRIPCIÓN</th><th colspan="4">PRESUPUESTO</th><th colspan="3">ANTERIOR</th><th colspan="3">ACTUAL</th><th colspan="3">ACUMULADO</th><th colspan="3">SALDO</th></tr>'+
   '<tr><th>Unid</th><th>Metrado</th><th>P.Unit</th><th>Presup.</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th><th>Metr.</th><th>Valoriz.</th><th>%</th></tr></thead><tbody>'+body+tot+'</tbody></table>'+firmasHTML(['ADMINISTRADOR','RESIDENTE','SUPERVISOR'],corte);}
 function valTotalHTML(corte){const t=OBRAS.map(o=>({o,v:valObra(o.k,corte).T}));let gp=0,ga=0;
- let rows=t.map(x=>{gp+=x.v.presup;ga+=x.v.acuV;return '<tr><td class="l">'+esc(x.o.n)+'</td><td class="n">'+n2(x.v.presup)+'</td><td class="n">'+n2(x.v.acuV)+'</td><td class="n">'+n2(x.v.presup-x.v.acuV)+'</td><td class="n">'+(x.v.presup?n2(x.v.acuV/x.v.presup*100):'0.00')+'</td></tr>';}).join('');
- rows+='<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+n2(gp-ga)+'</td><td class="n">'+(gp?n2(ga/gp*100):'0.00')+'</td></tr>';
+ let rows=t.map(x=>{gp+=x.v.presup;ga+=x.v.acuV;return '<tr><td class="l">'+esc(x.o.n)+'</td><td class="n">'+n2(x.v.presup)+'</td><td class="n">'+n2(x.v.acuV)+'</td><td class="n">'+n2(x.v.presup-x.v.acuV)+'</td><td class="n">'+(x.v.presup?n2(x.v.acuV/x.v.presup*100,2):'0.00')+'</td></tr>';}).join('');
+ rows+='<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+n2(gp-ga)+'</td><td class="n">'+(gp?n2(ga/gp*100,2):'0.00')+'</td></tr>';
  const pl=plazo();
  return '<h1>RESUMEN DE AVANCE – '+esc(TIT||'PAQUETE')+'</h1><div class="sub">Al '+fF(corte)+' · Convenio '+esc(CFG().conv)+'</div>'+
   '<table class="g"><thead><tr><th class="l">COMPONENTE</th><th>PRESUPUESTO</th><th>VALORIZADO</th><th>SALDO</th><th>% AVANCE</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-  '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %</div>';}
+  '<div class="sub" style="margin-top:8px">Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct,2)+' %</div>';}
 function firmasHTML(roles,corte){const n={ADMINISTRADOR:'ADMIN',RESIDENTE:'RESIDENTE',SUPERVISOR:'SUPERVISOR',PRESIDENTE:'PRESIDENTE',SECRETARIO:'SECRETARIA',FISCAL:'FISCAL',TESORERO:'TESORERA',ALMACENERO:'ALMACENERO',MAESTRO:'MAESTRO'};
  return '<div class="fir">'+roles.map(r=>{const a=agVig(n[r]||r,corte);return '<div><div class="ln"></div><b>'+esc(r)+'</b><div>'+esc(a?a.nom:'')+'</div><div>'+(a&&a.dni?'DNI '+a.dni:'')+'</div></div>';}).join('')+'</div>';}
 function docHTML(titulo,orient,body){return '<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title><style>@page{size:A4 '+orient+';margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:9pt;color:#000;margin:0}h1{font-size:13pt;color:#1d5a96;text-align:center;margin:0 0 2px}.sub{text-align:center;font-size:8.5pt;color:#333;margin-bottom:8px}table.g{width:100%;border-collapse:collapse;font-size:7.5pt}table.g th,table.g td{border:1px solid #888;padding:2px 3px;text-align:center}table.g th{background:#e8eef4}td.l,th.l{text-align:left}td.n{text-align:right;white-space:nowrap}tr.ob td{background:#1d5a96;color:#fff;font-weight:bold;text-align:left}tr.t td{background:#e8eef4;font-weight:bold}.fir{display:flex;justify-content:space-around;margin-top:34px;text-align:center;font-size:8.5pt}.fir .ln{border-top:1px solid #000;width:52mm;margin:0 auto 3px}.hl{background:#f8cbad}.ac{background:#c6efce}table.g.mat th{font-size:6.5pt;padding:1px}</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);}</scr'+'ipt></body></html>';}
@@ -866,7 +866,7 @@ function hojaVal18(corte){const mes=corte.slice(0,7),PP=(v,b)=>b?v/b:0;
   G.presup+=T.presup;G.antV+=T.antV;G.actV+=T.actV;G.acuV+=T.acuV;G.salV+=T.salV;});
  rows.push([{v:'',s:6},{v:'TOTAL OBRA',s:6},{v:'',s:6},{v:'',s:6},{v:'',s:6},{v:G.presup,s:6},{v:'',s:6},{v:G.antV,s:6},{v:PP(G.antV,G.presup),s:6},{v:'',s:6},{v:G.actV,s:6},{v:PP(G.actV,G.presup),s:6},{v:'',s:6},{v:G.acuV,s:6},{v:PP(G.acuV,G.presup),s:6},{v:'',s:6},{v:G.salV,s:6},{v:PP(G.salV,G.presup),s:6}]);
  return{name:'FORMATO 18',frz:6,frzX:2,w:[9,42,6,10,9,12,10,12,7,10,12,7,10,12,7,10,12,7],rows,merge:['A1:R1','A2:R2','A3:R3','C5:F5','G5:I5','J5:L5','M5:O5','P5:R5','A5:A6','B5:B6']};}
-function valHTML18(corte){const mes=corte.slice(0,7),pc=(v,b)=>b?n2(v/b*100):'0.00';const G={presup:0,antV:0,actV:0,acuV:0,salV:0};
+function valHTML18(corte){const mes=corte.slice(0,7),pc=(v,b)=>b?n2(v/b*100,2):'0.00';const G={presup:0,antV:0,actV:0,acuV:0,salV:0};
  let body='';OBRAS.forEach(o=>{const {filas,T}=valObra(o.k,corte);
   body+='<tr class="ob"><td colspan="18">'+esc(o.n)+'</td></tr>';
   filas.forEach(f=>body+='<tr><td>'+f.i+'</td><td class="l">'+esc(f.d)+'</td><td>'+esc(und(f.u))+'</td><td class="n">'+n2(f.metT)+'</td><td class="n">'+n2(f.pu)+'</td><td class="n">'+n2(f.presup)+'</td>'+
@@ -1107,12 +1107,12 @@ function vFolios(asid){const a=CU().as.find(x=>x.id===asid);if(!a){ir('#/cuad',t
 function asientoPDF(a){const body='<div style="text-align:right;font-size:10pt">Folio N° '+(a.folio||'____')+'</div><h1 style="font-size:13pt">CUADERNO DE OBRA</h1><div class="sub">'+esc(TIT2||TIT)+' · Convenio '+esc(CFG().conv)+'</div><pre style="white-space:pre-wrap;font-family:\'Liberation Serif\',serif;font-size:11.5pt;line-height:1.45;border:0;margin:10px 0">'+esc(textoAsiento(a))+'</pre>'+firmasHTML(a.autor==='S'?['SUPERVISOR','RESIDENTE']:['RESIDENTE','SUPERVISOR'],a.f);
  imprimir(docHTML('Asiento N° '+pad(a.n),'portrait',body));}
 // ---- Informe mensual (Formato 33) – carátula/índice con avance ----
-function informe33(corte){const mes=corte.slice(0,7);let gp=0,ga=0;const fil=OBRAS.map(o=>{const T=valObra(o.k,corte).T;gp+=T.presup;ga+=T.acuV;return '<tr><td class="l">'+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+(T.presup?n2(T.acuV/T.presup*100):'0.00')+'</td></tr>';}).join('');
+function informe33(corte){const mes=corte.slice(0,7);let gp=0,ga=0;const fil=OBRAS.map(o=>{const T=valObra(o.k,corte).T;gp+=T.presup;ga+=T.acuV;return '<tr><td class="l">'+esc(o.n)+'</td><td class="n">'+n2(T.presup)+'</td><td class="n">'+n2(T.acuV)+'</td><td class="n">'+(T.presup?n2(T.acuV/T.presup*100,2):'0.00')+'</td></tr>';}).join('');
  const pl=plazo();
  const body='<h1>INFORME MENSUAL DEL RESIDENTE (FORMATO N° 33)</h1><div class="sub">'+esc(TIT2||TIT)+' · Mes de '+esc(MESU(mes))+' (al '+fF(corte)+') · Convenio '+esc(CFG().conv)+' · Expediente '+esc(CFG().exp)+'</div>'+
   '<h2 style="font-size:11pt;color:#1d5a96">1. Avance físico y financiero</h2>'+
-  '<table class="g"><thead><tr><th class="l">OBRA</th><th>PRESUPUESTO</th><th>VALORIZADO ACUM.</th><th>% AVANCE</th></tr></thead><tbody>'+fil+'<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+(gp?n2(ga/gp*100):'0.00')+'</td></tr></tbody></table>'+
-  '<p>Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct)+' %. Avance financiero acumulado: '+(gp?n2(ga/gp*100):'0.00')+' %.</p>'+
+  '<table class="g"><thead><tr><th class="l">OBRA</th><th>PRESUPUESTO</th><th>VALORIZADO ACUM.</th><th>% AVANCE</th></tr></thead><tbody>'+fil+'<tr class="t"><td class="l">TOTAL OBRA</td><td class="n">'+n2(gp)+'</td><td class="n">'+n2(ga)+'</td><td class="n">'+(gp?n2(ga/gp*100,2):'0.00')+'</td></tr></tbody></table>'+
+  '<p>Plazo transcurrido: día '+pl.dia+' de '+PLAZO+' = '+n2(pl.pct,2)+' %. Avance financiero acumulado: '+(gp?n2(ga/gp*100,2):'0.00')+' %.</p>'+
   '<h2 style="font-size:11pt;color:#1d5a96">2. Anexos que se adjuntan</h2><ul style="font-size:10pt"><li>Valorización de Avance (Formato N° 18)</li><li>Hoja de Tareo (Formato N° 15) y Hoja de Jornales (Formato N° 16)</li><li>Movimiento de Almacén (Formatos N° 9 y 10)</li><li>Copia de los asientos del Cuaderno de Obra del mes</li><li>Panel fotográfico</li></ul>'+
   '<h2 style="font-size:11pt;color:#1d5a96">3. Comentario del Residente</h2><p style="min-height:60px">____________________________________________________________</p>'+
   firmasHTML(['RESIDENTE','SUPERVISOR'],corte);
@@ -1127,7 +1127,7 @@ function f19Data(corte,G,H,n){const mes=corte.slice(0,7),first=mes+'-01';const A
  const B=presup?actV/presup:0,C=G?H/G:0,D=Math.round(A*B*C*100)/100,E=Math.round(D*n*10/1000*100)/100,F=Math.round((D-E)*100)/100;
  const acumAnt=Math.round(A*coef*(presup?antAcuV/presup:0)*100)/100;
  return {mes,A,coef,G,H,n,C,B,acumAnt,D,E,F};}
-function f19HTML(corte,G,H,n){const d=f19Data(corte,G,H,n);const pc=v=>n2(v*100);const fir=(r,lab)=>{const a=agVig(r,corte);return '<div class="c"><div class="ln"></div><b>'+lab+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';};
+function f19HTML(corte,G,H,n){const d=f19Data(corte,G,H,n);const pc=v=>n2(v*100,2);const fir=(r,lab)=>{const a=agVig(r,corte);return '<div class="c"><div class="ln"></div><b>'+lab+'</b><div>Nombre: '+esc(a?a.nom:'')+'</div><div>DNI: '+(a&&a.dni?a.dni:'')+'</div></div>';};
  return '<style>.f19 td,.f19 th{border:1px solid #000;padding:3px 5px;font-size:8.5pt;text-align:center}.f19{width:100%;border-collapse:collapse}.hd{display:flex;justify-content:space-between;font-size:9pt;margin:6px 0}.gg{font-size:9pt;line-height:1.7}.firs{display:flex;flex-wrap:wrap;gap:18px 40px;margin-top:30px}.firs .c{width:46%;font-size:8.5pt}.firs .ln{border-top:1px solid #000;margin-bottom:3px}</style>'+
   '<h1 style="font-size:12pt">FORMATO N° 19: AUTORIZACIÓN DE GASTOS DEL RESIDENTE</h1>'+
   '<div class="hd"><span>N°: ____</span><span>CONVENIO N°: '+esc(CFG().conv)+'</span><span>EXPEDIENTE N°: '+esc(CFG().exp)+'</span><span>FECHA: '+fF(corte)+'</span></div>'+
